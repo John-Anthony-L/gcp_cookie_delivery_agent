@@ -1,0 +1,40 @@
+# Core ADK dependencies
+google-adk>=0.1.0
+
+# Google Cloud dependencies for BigQuery
+google-cloud-bigquery>=3.13.0
+google-cloud-logging>=3.8.0
+
+# Google API dependencies for Gmail and Calendar MCP servers
+google-auth>=2.23.0
+google-auth-oauthlib>=1.1.0
+google-auth-httplib2>=0.1.1
+google-api-python-client>=2.100.0
+
+# MCP server dependencies
+mcp>=0.1.0
+
+# Environment and configuration
+python-dotenv>=1.0.0
+
+# Async support
+asyncio-mqtt>=0.13.0  # if using MQTT for MCP
+aiohttp>=3.8.0       # for HTTP-based MCP servers
+
+# Utility dependencies
+pydantic>=2.4.0      # for data validation
+tenacity>=8.2.0      # for retry logic
+structlog>=23.1.0    # for structured logging
+
+# Development and testing
+pytest>=7.4.0
+pytest-asyncio>=0.21.0
+pytest-mock>=3.11.0
+black>=23.7.0
+isort>=5.12.0
+mypy>=1.5.0
+
+# Optional: For enhanced email formatting
+jinja2>=3.1.0        # for email templates
+markdown>=3.4.0      # for rich email content
+langchain-community==0.3.20
