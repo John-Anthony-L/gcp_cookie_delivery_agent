@@ -2,7 +2,7 @@
 
 A sophisticated multi-agent system built with Google ADK that automates cookie delivery order processing, scheduling, and customer communication. The system integrates with BigQuery for order management, Google Calendar for delivery scheduling, and Gmail for customer notifications.
 
-## 🏗️ Architecture Overview
+## Architecture Overview
 
 ```
 ┌─────────────────┐    ┌──────────────────┐    ┌─────────────────┐
@@ -28,7 +28,7 @@ A sophisticated multi-agent system built with Google ADK that automates cookie d
 2. **Calendar Agent**: Checks availability and schedules delivery appointments
 3. **Email Agent**: Generates personalized confirmation emails with haikus and updates order status
 
-## 🚀 Quick Start
+## Quick Start
 
 ### Prerequisites
 
@@ -71,7 +71,7 @@ manager.create_orders_table()
 python agent.py
 ```
 
-## 🔧 Environment Setup
+## Environment Setup
 
 Create a `.env` file in the `cookie-scheduler-agent/` directory with the following configuration:
 
@@ -133,7 +133,7 @@ cookie-scheduler-agent/
 └── ...
 ```
 
-## 📊 BigQuery Schema
+## BigQuery Schema
 
 The system creates the following BigQuery structure:
 
@@ -247,7 +247,7 @@ python gmail_mcp_server.py
 - **Purpose**: Creative content generation
 - **Capability**: Generates seasonal haikus based on delivery month and cookie types
 
-## 🔄 Workflow Process
+## Workflow Process
 
 1. **Order Detection**: Database agent fetches latest order with "order_placed" status
 2. **Schedule Analysis**: Calendar agent checks availability for requested delivery date
@@ -256,7 +256,7 @@ python gmail_mcp_server.py
 5. **Customer Notification**: Email agent sends confirmation with delivery details and haiku
 6. **Status Update**: Order status updated to "scheduled" in BigQuery
 
-## 🧪 Testing
+## Testing
 
 ### Development Mode
 
@@ -300,7 +300,7 @@ cookie-scheduler-agent/
 └── gmail_token.json          # Auto-generated OAuth2 tokens
 ```
 
-## 🔐 Security Notes
+## Security Notes
 
 ### Credential Management
 - Never commit `.env`, `*_credentials.json`, or `*_token.json` files to version control
@@ -317,7 +317,7 @@ cookie-scheduler-agent/
 - Use HTTPS for all API communications
 - Implement audit logging for data access
 
-## 🚨 Troubleshooting
+## Troubleshooting
 
 ### Common Issues
 
@@ -351,7 +351,7 @@ Enable detailed logging:
 LOG_LEVEL=DEBUG
 ```
 
-## 📈 Monitoring and Analytics
+## Monitoring and Analytics
 
 The system includes built-in analytics via the `get_order_analytics` function:
 
@@ -362,7 +362,7 @@ print(analytics)
 # Returns: order counts, average order value, total revenue by status
 ```
 
-## 🤝 Contributing
+## Contributing
 
 1. Fork the repository
 2. Create a feature branch
