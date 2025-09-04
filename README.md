@@ -85,7 +85,7 @@ Create a `.env` file in the `cookie-scheduler-agent/` directory with the followi
 GOOGLE_CLOUD_PROJECT=your-gcp-project-id
 
 # Model configuration for Google ADK
-MODEL=gemini-1.5-flash-001
+MODEL=gemini-2.5-flash
 
 # =============================================================================
 # BUSINESS ACCOUNT CONFIGURATION (for MCP servers)
