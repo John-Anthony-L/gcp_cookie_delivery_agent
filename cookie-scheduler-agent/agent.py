@@ -10,6 +10,14 @@ from google.adk import Agent
 from google.adk.agents import SequentialAgent
 from google.adk.tools.tool_context import ToolContext
 
+# Import BigQuery tools
+try:
+    from bigquery_tools import get_latest_order_from_bigquery, update_order_status_in_bigquery
+    BIGQUERY_AVAILABLE = True
+except ImportError as e:
+    logging.warning(f"BigQuery tools not available: {e}")
+    BIGQUERY_AVAILABLE = False
+
 # --- Setup and Configuration ---
 
 # Set up cloud logging
@@ -24,8 +32,10 @@ except Exception as e:
 
 # Load environment variables from a .env file
 load_dotenv()
-model_name = os.getenv("MODEL", "gemini-1.5-flash-001") # Default to a known model
+model_name = os.getenv("MODEL", "gemini-2.5-flash")
+use_bigquery = os.getenv("USE_BIGQUERY", "false").lower() == "true"
 logging.info(f"Using model: {model_name}")
+logging.info(f"BigQuery integration: {'enabled' if use_bigquery and BIGQUERY_AVAILABLE else 'disabled (using dummy data)'}")
 
 
 # --- Dummy Data and Simulation Tools ---
@@ -97,27 +107,17 @@ DUMMY_CALENDAR = {
 def get_latest_order(tool_context: ToolContext) -> dict:
     """
     Fetches the most recent order with 'order_placed' status from the database.
-    
-    In production, this would:
-    1. Connect to BigQuery using google-cloud-bigquery
-    2. Query: SELECT * FROM `cookie_delivery.orders` 
-             WHERE order_status = 'order_placed' 
-             ORDER BY created_at DESC LIMIT 1
-    3. Handle authentication and connection errors
+    Uses BigQuery if enabled, otherwise uses dummy data.
     """
     logging.info("Tool: get_latest_order called.")
     
-    # TODO: Replace with BigQuery integration
-    # from google.cloud import bigquery
-    # client = bigquery.Client()
-    # query = """
-    #     SELECT * FROM `cookie_delivery.orders` 
-    #     WHERE order_status = 'order_placed' 
-    #     ORDER BY created_at DESC LIMIT 1
-    # """
-    # result = client.query(query).to_dataframe()
+    # Use BigQuery if available and enabled
+    if use_bigquery and BIGQUERY_AVAILABLE:
+        import asyncio
+        return asyncio.run(get_latest_order_from_bigquery(tool_context))
     
-    # Find the first order with status 'order_placed'
+    # Fallback to dummy data
+    logging.info("Using dummy data for order retrieval")
     for order_id, order_details in DUMMY_ORDER_DATABASE.items():
         if order_details["order_status"] == "order_placed":
             logging.info(f"Found latest order: {order_id}")
@@ -131,32 +131,17 @@ def get_latest_order(tool_context: ToolContext) -> dict:
 def update_order_status(tool_context: ToolContext, order_number: str, new_status: str) -> dict:
     """
     Updates the status of a given order in the database.
-    
-    In production, this would:
-    1. Connect to BigQuery
-    2. Execute: UPDATE `cookie_delivery.orders` 
-                SET order_status = @new_status, updated_at = CURRENT_TIMESTAMP()
-                WHERE order_number = @order_number
-    3. Return success/failure with affected rows count
+    Uses BigQuery if enabled, otherwise uses dummy data.
     """
     logging.info(f"Tool: update_order_status called for {order_number} to set status {new_status}.")
     
-    # TODO: Replace with BigQuery update
-    # from google.cloud import bigquery
-    # client = bigquery.Client()
-    # query = """
-    #     UPDATE `cookie_delivery.orders` 
-    #     SET order_status = @new_status, updated_at = CURRENT_TIMESTAMP()
-    #     WHERE order_number = @order_number
-    # """
-    # job_config = bigquery.QueryJobConfig(
-    #     query_parameters=[
-    #         bigquery.ScalarQueryParameter("new_status", "STRING", new_status),
-    #         bigquery.ScalarQueryParameter("order_number", "STRING", order_number),
-    #     ]
-    # )
-    # result = client.query(query, job_config=job_config)
+    # Use BigQuery if available and enabled
+    if use_bigquery and BIGQUERY_AVAILABLE:
+        import asyncio
+        return asyncio.run(update_order_status_in_bigquery(tool_context, order_number, new_status))
     
+    # Fallback to dummy data
+    logging.info("Using dummy data for order status update")
     if order_number in DUMMY_ORDER_DATABASE:
         DUMMY_ORDER_DATABASE[order_number]["order_status"] = new_status
         DUMMY_ORDER_DATABASE[order_number]["updated_at"] = datetime.now().isoformat() + "Z"
@@ -181,15 +166,6 @@ def get_delivery_schedule(tool_context: ToolContext) -> dict:
     logging.info("Tool: get_delivery_schedule called.")
     
     # TODO: Replace with MCP server call to Google Calendar
-    # This would be something like:
-    # mcp_response = await mcp_client.call_tool(
-    #     "calendar_get_events", 
-    #     {
-    #         "calendar_id": "deliveries@cookiebusiness.com",
-    #         "time_min": "2025-09-01T00:00:00Z",
-    #         "time_max": "2025-09-30T23:59:59Z"
-    #     }
-    # )
     
     tool_context.state['delivery_schedule'] = DUMMY_CALENDAR
     return DUMMY_CALENDAR
@@ -207,25 +183,6 @@ def schedule_delivery(tool_context: ToolContext, date: str, order_number: str, l
     logging.info(f"Tool: schedule_delivery called for {order_number} on {date} ({time_preference}).")
     
     # TODO: Replace with MCP server call to Google Calendar
-    # This would be something like:
-    # time_slots = {
-    #     "morning": {"start": "09:00:00", "end": "09:30:00"},
-    #     "afternoon": {"start": "14:00:00", "end": "14:30:00"},
-    #     "evening": {"start": "18:00:00", "end": "18:30:00"}
-    # }
-    # slot = time_slots.get(time_preference, time_slots["morning"])
-    # 
-    # mcp_response = await mcp_client.call_tool(
-    #     "calendar_create_event",
-    #     {
-    #         "calendar_id": "deliveries@cookiebusiness.com",
-    #         "summary": f"Cookie Delivery - {order_number}",
-    #         "location": location,
-    #         "start": f"{date}T{slot['start']}-07:00",
-    #         "end": f"{date}T{slot['end']}-07:00",
-    #         "description": f"Delivery for order {order_number}"
-    #     }
-    # )
     
     # Get order details for the event
     order_details = tool_context.state.get('order_details', {})
@@ -389,7 +346,10 @@ email_agent = Agent(
 
     1.  **Generate Haiku**: Delegate to your `haiku_writer_agent` to generate a haiku based on the delivery month ({delivery_month}) and the order items ({order_details.order_items}).
 
-    2.  **Send Email**: Use the `send_confirmation_email` tool to send via the business Gmail account (deliveries@cookiebusiness.com). 
+    2.  **Update Status**: use the `update_order_status` tool to change the order status to 'scheduled' in BigQuery.
+        Use the order number: {order_details.order_number}.
+
+    3.  **Send Email**: Use the `send_confirmation_email` tool to send via the business Gmail account (deliveries@cookiebusiness.com). 
         - Send to: {order_details.customer_email}
         - Subject: "Your Cookie Delivery is Scheduled!"
         - Body: Include a personalized confirmation message with:
@@ -399,8 +359,8 @@ email_agent = Agent(
           * The generated haiku
           * Business contact information
 
-    3.  **Update Status**: After the email is sent successfully, use the `update_order_status` tool to change the order status to 'scheduled' in BigQuery.
-        Use the order number: {order_details.order_number}.
+
+
     """,
     sub_agents=[haiku_writer_agent],
     tools=[send_confirmation_email, update_order_status],

@@ -57,7 +57,13 @@ gcloud auth application-default login
 gcloud config set project YOUR_PROJECT_ID
 ```
 
-4. **Initialize BigQuery Database**
+4. **Setup BigQuery Database (Automated)**
+```bash
+# Run the automated setup script
+./setup.sh
+```
+
+**OR Setup BigQuery Database (Manual)**
 ```python
 from bigquery_tools import BigQueryOrderManager
 
@@ -66,7 +72,18 @@ manager.ensure_dataset_exists()
 manager.create_orders_table()
 ```
 
-5. **Run the Agent System**
+5. **Enable BigQuery Integration**
+```bash
+# Edit .env file and set:
+USE_BIGQUERY=true
+```
+
+6. **Test BigQuery Integration (Optional)**
+```bash
+python test_bigquery.py
+```
+
+7. **Run the Agent System**
 ```bash
 python agent.py
 ```
@@ -86,6 +103,12 @@ GOOGLE_CLOUD_PROJECT=your-gcp-project-id
 
 # Model configuration for Google ADK
 MODEL=gemini-2.5-flash
+
+# =============================================================================
+# BIGQUERY INTEGRATION
+# =============================================================================
+# Set to 'true' to use real BigQuery, 'false' to use dummy data
+USE_BIGQUERY=false
 
 # =============================================================================
 # BUSINESS ACCOUNT CONFIGURATION (for MCP servers)
