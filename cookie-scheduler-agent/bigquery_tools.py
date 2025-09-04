@@ -197,9 +197,3 @@ async def get_order_analytics(tool_context: ToolContext, days: int = 30) -> Dict
         logging.error(f"BigQuery analytics error: {e}")
         return {"status": "error", "message": f"Analytics error: {str(e)}"}
 
-# Example usage:
-# from google.adk.tools.function_tool import FunctionTool
-# 
-# bigquery_get_order_tool = FunctionTool(get_latest_order_from_bigquery)
-# bigquery_update_order_tool = FunctionTool(update_order_status_in_bigquery)
-# bigquery_analytics_tool = FunctionTool(get_order_analytics)
