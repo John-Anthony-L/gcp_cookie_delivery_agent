@@ -197,7 +197,7 @@ INSERT INTO `{PROJECT_ID}.cookie_delivery.orders` VALUES (
 );
 ```
 
-## 🔌 MCP Server Setup
+## MCP Server Setup
 
 The system uses Model Context Protocol (MCP) servers for Gmail and Calendar integration with your business accounts.
 
@@ -225,7 +225,7 @@ python gmail_mcp_server.py
 - `send_email`: Send customer confirmation emails
 - `get_message_status`: Track email delivery status
 
-## 🤖 Agent Components
+## Agent Components
 
 ### 1. Database Agent (`store_database_agent`)
 - **Purpose**: Manages order data in BigQuery
@@ -370,11 +370,11 @@ print(analytics)
 4. Add tests for new functionality
 5. Submit a pull request
 
-## 📄 License
+## License
 
 This project is licensed under the MIT License - see the LICENSE file for details.
 
-## 🆘 Support
+## Support
 
 For issues and questions:
 1. Check the troubleshooting section above
