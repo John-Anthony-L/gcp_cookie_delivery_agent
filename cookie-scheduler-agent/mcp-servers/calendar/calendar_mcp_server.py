@@ -28,11 +28,21 @@ try:
 except ImportError:
     logging.error("Calendar API dependencies not installed. Run: pip install google-auth google-auth-oauthlib google-auth-httplib2 google-api-python-client")
 
-load_dotenv()
+# Load environment variables from parent directory
+dotenv_path = os.path.join(os.path.dirname(os.path.dirname(__file__)), '.env')
+load_dotenv(dotenv_path)
 
-# Calendar API Configuration
-SCOPES = ['https://www.googleapis.com/auth/calendar']
+# Calendar API Configuration  
+# See: https://developers.google.com/identity/protocols/oauth2/scopes#calendar
+# Using full calendar access scope (this is the most common and should work)
+SCOPES = [
+    'https://www.googleapis.com/auth/calendar'
+]
 BUSINESS_CALENDAR_ID = os.getenv('BUSINESS_CALENDAR_ID', 'primary')  # or specific calendar ID
+
+# File paths relative to this script's location
+CREDENTIALS_FILE = os.path.join(os.path.dirname(__file__), 'calendar_credentials.json')
+TOKEN_FILE = os.path.join(os.path.dirname(__file__), 'calendar_token.json')
 
 class CalendarManager:
     """Manages Google Calendar API operations for the business calendar."""
@@ -43,31 +53,66 @@ class CalendarManager:
     
     def authenticate(self):
         """Authenticate with Google Calendar API using OAuth2."""
+        # Check if credentials file exists
+        if not os.path.exists(CREDENTIALS_FILE):
+            logging.error(f"calendar_credentials.json not found at {CREDENTIALS_FILE}")
+            logging.error("Please follow setup instructions:")
+            logging.error("1. Go to https://console.cloud.google.com/")
+            logging.error("2. Enable Calendar API")
+            logging.error("3. Create OAuth 2.0 credentials (Desktop app)")
+            logging.error("4. Download as 'calendar_credentials.json' in the mcp-servers/calendar/ folder")
+            self.service = None
+            return
+            
         creds = None
         # The file token.json stores the user's access and refresh tokens
-        if os.path.exists('calendar_token.json'):
-            creds = Credentials.from_authorized_user_file('calendar_token.json', SCOPES)
+        if os.path.exists(TOKEN_FILE):
+            creds = Credentials.from_authorized_user_file(TOKEN_FILE, SCOPES)
         
         # If there are no (valid) credentials available, let the user log in
         if not creds or not creds.valid:
             if creds and creds.expired and creds.refresh_token:
+                logging.info("Refreshing expired credentials...")
                 creds.refresh(Request())
             else:
-                flow = InstalledAppFlow.from_client_secrets_file(
-                    'calendar_credentials.json', SCOPES)
-                creds = flow.run_local_server(port=0)
+                logging.info(f"Starting OAuth flow with scopes: {SCOPES}")
+                try:
+                    # Read the credentials to get project info
+                    import json
+                    with open(CREDENTIALS_FILE, 'r') as f:
+                        cred_data = json.load(f)
+                        project_id = cred_data.get('installed', {}).get('project_id', 'unknown')
+                        logging.info(f"Using project: {project_id}")
+                    
+                    flow = InstalledAppFlow.from_client_secrets_file(
+                        CREDENTIALS_FILE, SCOPES)
+                    creds = flow.run_local_server(port=0)
+                    logging.info("OAuth flow completed successfully")
+                except Exception as oauth_error:
+                    logging.error(f"OAuth flow failed: {oauth_error}")
+                    logging.error("Make sure Google Calendar API is enabled in Google Cloud Console")
+                    logging.error(f"Check project: {cred_data.get('installed', {}).get('project_id', 'unknown')}")
+                    raise
             # Save the credentials for the next run
-            with open('calendar_token.json', 'w') as token:
+            with open(TOKEN_FILE, 'w') as token:
                 token.write(creds.to_json())
+                logging.info(f"Credentials saved to {TOKEN_FILE}")
         
         try:
             self.service = build('calendar', 'v3', credentials=creds)
             logging.info("Calendar API authenticated successfully")
         except HttpError as error:
             logging.error(f"Calendar API authentication failed: {error}")
+            self.service = None
     
     def get_events(self, time_min: str, time_max: str, calendar_id: str = None) -> Dict:
         """Get events from the calendar within a time range."""
+        if not self.service:
+            return {
+                "status": "error",
+                "message": "Calendar service not authenticated. Please set up credentials."
+            }
+            
         try:
             calendar_id = calendar_id or BUSINESS_CALENDAR_ID
             
@@ -113,6 +158,12 @@ class CalendarManager:
     def create_event(self, summary: str, description: str, location: str, 
                     start_datetime: str, end_datetime: str, calendar_id: str = None) -> Dict:
         """Create a new event in the calendar."""
+        if not self.service:
+            return {
+                "status": "error",
+                "message": "Calendar service not authenticated. Please set up credentials."
+            }
+            
         try:
             calendar_id = calendar_id or BUSINESS_CALENDAR_ID
             
@@ -160,6 +211,12 @@ class CalendarManager:
     def check_availability(self, start_datetime: str, end_datetime: str, 
                           calendar_id: str = None) -> Dict:
         """Check if a time slot is available (no conflicting events)."""
+        if not self.service:
+            return {
+                "status": "error",
+                "message": "Calendar service not authenticated. Please set up credentials."
+            }
+            
         try:
             calendar_id = calendar_id or BUSINESS_CALENDAR_ID
             
