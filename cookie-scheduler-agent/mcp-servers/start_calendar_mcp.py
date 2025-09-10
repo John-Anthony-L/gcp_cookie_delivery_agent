@@ -14,19 +14,18 @@ def start_calendar_mcp_server():
     # Get the path to the calendar MCP server
     calendar_mcp_path = os.path.join(
         os.path.dirname(os.path.abspath(__file__)), 
-        'mcp-servers', 
         'calendar'
     )
     
     server_script = os.path.join(calendar_mcp_path, 'calendar_mcp_server.py')
     
-    print(f"🗓️  Starting Calendar MCP Server...")
-    print(f"📁 Location: {calendar_mcp_path}")
-    print(f"🚀 Script: {server_script}")
+    print(f" Starting Calendar MCP Server...")
+    print(f" Location: {calendar_mcp_path}")
+    print(f" Script: {server_script}")
     print("=" * 60)
     
     if not os.path.exists(server_script):
-        print(f"❌ Calendar MCP server not found at: {server_script}")
+        print(f" Calendar MCP server not found at: {server_script}")
         return False
     
     try:
@@ -35,9 +34,9 @@ def start_calendar_mcp_server():
         subprocess.run([sys.executable, 'calendar_mcp_server.py'])
         
     except KeyboardInterrupt:
-        print("\n🛑 Calendar MCP Server stopped by user")
+        print("\n Calendar MCP Server stopped by user")
     except Exception as e:
-        print(f"❌ Error starting Calendar MCP Server: {e}")
+        print(f" Error starting Calendar MCP Server: {e}")
         return False
     
     return True
