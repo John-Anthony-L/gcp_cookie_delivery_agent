@@ -19,13 +19,9 @@ except ImportError:
     # Fallback for direct execution
     from dummy_data import DUMMY_ORDER_DATABASE, DUMMY_CALENDAR
 
-# Calendar MCP Integration Setup
-calendar_mcp_path = os.path.join(os.path.dirname(__file__), 'mcp-servers', 'calendar')
-sys.path.append(calendar_mcp_path)
-
-# Import Calendar MCP Manager
+# Replace the dynamic imports with relative imports
 try:
-    from calendar_mcp_server import CalendarManager
+    from .mcp_servers.calendar.calendar_mcp_server import CalendarManager
     calendar_manager = CalendarManager()
     CALENDAR_MCP_AVAILABLE = calendar_manager.service is not None
     logging.info("Calendar MCP: Successfully connected to Google Calendar")
@@ -38,9 +34,8 @@ except Exception as e:
     calendar_manager = None
     CALENDAR_MCP_AVAILABLE = False
 
-# Import BigQuery tools
 try:
-    from bigquery_tools import get_latest_order_from_bigquery, update_order_status_in_bigquery
+    from .bigquery_utils.bigquery_tools import get_latest_order_from_bigquery, update_order_status_in_bigquery
     BIGQUERY_AVAILABLE = True
 except ImportError as e:
     logging.warning(f"BigQuery tools not available: {e}")
