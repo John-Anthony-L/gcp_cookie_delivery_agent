@@ -416,6 +416,15 @@ cookie-scheduler-agent/
    # Verify permissions on the target calendar
    ```
 
+4. **Permissions Error**
+   ```bash
+   # 1. Ensure Calendar API is enabled in Google Cloud Console
+   # 2. Navigate to: "APIs & Services" → "OAuth consent screen"
+   # 3. User Type: Make sure you selected "External" (not Internal)
+   # 4. Test users: Add your personal Gmail account as a test user
+   ```
+
+
 ### BigQuery Issues
 
 1. **BigQuery Permission Denied**
@@ -429,15 +438,6 @@ cookie-scheduler-agent/
    # This is normal - the agent falls back to dummy data
    # Enable BigQuery: USE_BIGQUERY=true in .env
    # Run setup: ./setup.sh
-   ```
-
-### Agent Workflow Issues
-
-1. **Infinite Loop in ADK Web Interface**
-   ```bash
-   # This was a known issue - now fixed
-   # Root agent has proper termination conditions
-   # Try: python agent.py (direct execution)
    ```
 
 ### Debug Mode
