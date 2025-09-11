@@ -19,7 +19,7 @@ except ImportError:
     # Fallback for direct execution
     from dummy_data import DUMMY_ORDER_DATABASE, DUMMY_CALENDAR
 
-# Replace the dynamic imports with relative imports
+# importing utils
 try:
     from .mcp_servers.calendar.calendar_mcp_server import CalendarManager
     calendar_manager = CalendarManager()
