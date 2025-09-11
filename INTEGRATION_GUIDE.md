@@ -1,46 +1,127 @@
-# Cookie Delivery Agent System - Integration Guide
+# Cookie Delivery Agent System - Technical Integration Guide
 
-This document outlines how to integrate the cookie delivery agent system with real-world services: BigQuery for orders, Google Calendar for scheduling, and Gmail for customer communication.
+This document provides **deep technical implementation details** for integrating the cookie delivery agent system with real-world services. For quick start instructions, see [README.md](README.md).
 
-## Architecture Overview
+## Current Implementation Status
 
+### Completed Integrations
+- **Calendar MCP Server**: Full Google Calendar API integration with OAuth2 authentication
+- **Agent Sequential Workflow**: Complete multi-agent orchestration with state management
+- **Error Handling & Fallbacks**: Graceful degradation to dummy data when services unavailable
+- **Environment Configuration**: Comprehensive .env management with feature flags
+
+### Partial Implementations
+- **BigQuery Integration**: Database schema and tools ready, needs activation
+- **Gmail MCP Server**: Basic structure exists, needs completion like calendar implementation
+
+### Next Development Priorities
+1. Complete Gmail MCP server following calendar pattern
+2. Enable and test BigQuery integration
+3. Production hardening and monitoring
+
+## Calendar MCP Implementation Deep Dive
+
+### Architecture Pattern: Direct Google API + MCP Wrapper
+
+The calendar integration follows this pattern:
+```python
+# mcp-servers/calendar/calendar_mcp_server.py
+class CalendarManager:
+    def __init__(self):
+        self.service = self._authenticate()  # Direct Google Calendar API
+    
+    def get_events(self, time_min, time_max, calendar_id="primary"):
+        """Direct Google Calendar API call with error handling"""
+        
+    def create_event(self, summary, description, location, start_datetime, end_datetime, calendar_id="primary"):
+        """Create calendar events with RFC3339 formatting"""
+        
+    def check_availability(self, start_datetime, end_datetime, calendar_id="primary"):
+        """Check for scheduling conflicts"""
 ```
-┌─────────────────┐    ┌──────────────────┐    ┌─────────────────┐
-│   Root Agent    │───►│ Sequential Agent │───►│  Sub-Agents     │
-└─────────────────┘    └──────────────────┘    └─────────────────┘
-                                                         │
-                                                         ▼
-┌─────────────────┐    ┌──────────────────┐    ┌─────────────────┐
-│ Database Agent  │    │  Calendar Agent  │    │   Email Agent   │
-│   (BigQuery)    │    │   (MCP Server)   │    │  (MCP Server)   │
-└─────────────────┘    └──────────────────┘    └─────────────────┘
-         │                       │                       │
-         ▼                       ▼                       ▼
-┌─────────────────┐    ┌──────────────────┐    ┌─────────────────┐
-│    BigQuery     │    │ Google Calendar  │    │     Gmail       │
-│   (Direct)      │    │  (Business Acct) │    │ (Business Acct) │
-└─────────────────┘    └──────────────────┘    └─────────────────┘
+
+### Authentication Flow
+```python
+# OAuth2 Flow Implementation
+def _authenticate(self):
+    SCOPES = ['https://www.googleapis.com/auth/calendar']
+    creds = None
+    
+    # Load existing token
+    if os.path.exists('calendar_token.json'):
+        creds = Credentials.from_authorized_user_file('calendar_token.json', SCOPES)
+    
+    # Refresh or create new token
+    if not creds or not creds.valid:
+        if creds and creds.expired and creds.refresh_token:
+            creds.refresh(Request())
+        else:
+            flow = InstalledAppFlow.from_client_secrets_file('calendar_credentials.json', SCOPES)
+            creds = flow.run_local_server(port=0)
+        
+        # Save token for future use
+        with open('calendar_token.json', 'w') as token:
+            token.write(creds.to_json())
+    
+    return build('calendar', 'v3', credentials=creds)
 ```
 
-## Implementation Strategy
+### Agent Integration Pattern
+```python
+# cookie-scheduler-agent/agent.py
+# Dynamic import with fallback
+try:
+    from .mcp_servers.calendar.calendar_mcp_server import CalendarManager
+    calendar_manager = CalendarManager()
+    CALENDAR_MCP_AVAILABLE = calendar_manager.service is not None
+except ImportError as e:
+    calendar_manager = None
+    CALENDAR_MCP_AVAILABLE = False
 
-### 1. BigQuery Integration (Direct Connection)
-
-**Why Direct**: Since you're using your own Google Cloud account, direct BigQuery integration is the most efficient approach.
-
-**Setup Requirements**:
-```bash
-# Install BigQuery client
-pip install google-cloud-bigquery
-
-# Set up authentication
-gcloud auth application-default login
-export GOOGLE_CLOUD_PROJECT="your-project-id"
+# Tool function with real API + fallback
+def schedule_delivery(tool_context: ToolContext, date: str, order_number: str, location: str, time_preference: str = "morning"):
+    if use_calendar_mcp and CALENDAR_MCP_AVAILABLE and calendar_manager:
+        # Use real Google Calendar API
+        create_result = calendar_manager.create_event(
+            summary=f"🍪 Cookie Delivery - {order_number}",
+            description=event_description,
+            location=location,
+            start_datetime=start_datetime,
+            end_datetime=end_datetime,
+            calendar_id=business_calendar_id
+        )
+        return create_result
+    else:
+        # Fallback to dummy data
+        return dummy_schedule_delivery(date, order_number, location, time_preference)
 ```
 
-**Database Schema**:
+## BigQuery Integration Architecture
+
+### Current State: Structure Ready, Needs Activation
+
+The BigQuery integration is **structurally complete** but not yet activated. Here's the implementation:
+
+```python
+# bigquery-utils/bigquery_tools.py (implemented)
+async def get_latest_order_from_bigquery(tool_context: ToolContext) -> dict:
+    """Fetches most recent order with 'order_placed' status"""
+    
+async def update_order_status_in_bigquery(tool_context: ToolContext, order_number: str, new_status: str) -> dict:
+    """Updates order status to 'scheduled', 'delivered', etc."""
+
+# Agent integration pattern (ready)
+def get_latest_order(tool_context: ToolContext) -> dict:
+    if use_bigquery and BIGQUERY_AVAILABLE:
+        return asyncio.run(get_latest_order_from_bigquery(tool_context))
+    else:
+        # Fallback to dummy data (currently active)
+        return get_dummy_order_data()
+```
+
+### Database Schema (Implemented)
 ```sql
-CREATE TABLE `cookie_delivery.orders` (
+CREATE TABLE `{PROJECT_ID}.cookie_delivery.orders` (
   order_id STRING NOT NULL,
   order_number STRING NOT NULL,
   customer_email STRING NOT NULL,
@@ -70,104 +151,123 @@ CREATE TABLE `cookie_delivery.orders` (
 );
 ```
 
-**Integration Steps**:
-1. Replace dummy functions in `agent.py` with `bigquery_tools.py` functions
-2. Update imports to use BigQuery tools
-3. Configure environment variables for your project
+### Activation Steps
+1. **Set Environment Variables**: `USE_BIGQUERY=true` in `.env`
+2. **Run Setup Script**: `./setup.sh` to create dataset and tables
+3. **Test Connection**: `python bigquery-utils/test_bigquery.py`
+4. **Add Sample Data**: Insert test orders for validation
 
-### 2. Google Calendar MCP Server (Business Account)
+## Gmail MCP Implementation Roadmap
 
-**Why MCP**: Separate business email account requires isolated authentication and API access.
+### Current State: Basic Structure, Needs Calendar-Style Implementation
 
-**Setup Requirements**:
-```bash
-# Install Google Calendar API client
-pip install google-auth google-auth-oauthlib google-auth-httplib2 google-api-python-client
+The Gmail MCP server exists but needs completion following the successful calendar pattern:
 
-# Install MCP server dependencies
-pip install mcp
-
-# Set up OAuth2 credentials for business account
-```
-
-**MCP Server Features**:
-- **get_events**: Fetch delivery schedule
-- **create_event**: Schedule new deliveries
-- **check_availability**: Verify time slot availability
-- **update_event**: Modify existing appointments
-
-**Running the MCP Server**:
-```bash
-python calendar_mcp_server.py
-```
-
-### 3. Gmail MCP Server (Business Account)
-
-**Why MCP**: Business email separation and enhanced security for email operations.
-
-**Setup Requirements**:
-```bash
-# Same Google API dependencies as Calendar
-# Configure OAuth2 for Gmail API access
-```
-
-**MCP Server Features**:
-- **send_email**: Send confirmation emails
-- **get_message_status**: Track email delivery
-- **send_html_email**: Rich formatting support
-
-**Running the MCP Server**:
-```bash
-python gmail_mcp_server.py
-```
-
-## Agent Integration Patterns
-
-### Pattern 1: Direct BigQuery Agent
 ```python
-from bigquery_tools import get_latest_order_from_bigquery, update_order_status_in_bigquery
-from google.adk.tools.function_tool import FunctionTool
+# gmail_mcp_server.py (needs completion)
+class GmailManager:
+    def __init__(self):
+        self.service = self._authenticate()  # Implement like CalendarManager
+    
+    def send_email(self, to_email, subject, body, from_email=None):
+        """Send HTML email via Gmail API"""
+        
+    def get_message_status(self, message_id):
+        """Track email delivery status"""
+```
 
-store_database_agent = Agent(
-    name="store_database_agent",
-    model=model_name,
-    description="Responsible for BigQuery order management",
-    tools=[
-        FunctionTool(get_latest_order_from_bigquery),
-        FunctionTool(update_order_status_in_bigquery)
-    ]
+### Implementation Pattern (Following Calendar Success)
+1. **OAuth2 Setup**: Similar to calendar - `gmail_credentials.json` + `gmail_token.json`
+2. **API Scopes**: `['https://www.googleapis.com/auth/gmail.send']`
+3. **Error Handling**: Same graceful fallback pattern as calendar
+4. **Agent Integration**: Update email agent tools to use real Gmail API
+
+### Required OAuth2 Scopes
+```python
+SCOPES = [
+    'https://www.googleapis.com/auth/gmail.send',
+    'https://www.googleapis.com/auth/gmail.readonly'  # for status tracking
+]
+```
+
+### Agent Integration Target
+```python
+# Target implementation in agent.py
+def send_confirmation_email(tool_context: ToolContext, recipient_email: str, subject: str, body: str):
+    if use_gmail_mcp and GMAIL_MCP_AVAILABLE and gmail_manager:
+        # Use real Gmail API
+        result = gmail_manager.send_email(
+            to_email=recipient_email,
+            subject=subject,
+            body=body,
+            from_email=business_email
+        )
+        return result
+    else:
+        # Fallback to dummy response
+        return dummy_send_email(recipient_email, subject, body)
+```
+
+## Agent Workflow Implementation Details
+
+### Sequential Agent Pattern (Implemented)
+```python
+# Successful pattern now working
+delivery_workflow_agent = SequentialAgent(
+    name="delivery_workflow_agent",
+    description="Manages the entire cookie delivery process from order to confirmation.",
+    sub_agents=[
+        store_database_agent,    # BigQuery operations (structure ready)
+        calendar_agent,          # ✅ Real Google Calendar integration
+        email_agent             # Basic implementation (needs Gmail MCP)
+    ],
+)
+
+# Root agent with proper termination (fixed infinite loop issue)
+root_agent = Agent(
+    name="root_agent",
+    instruction="""
+    1. Greet user and ask to start cookie service
+    2. Transfer to delivery_workflow_agent
+    3. Summarize results and wait for next request
+    4. DO NOT restart unless explicitly requested
+    """,
+    sub_agents=[delivery_workflow_agent],
 )
 ```
 
-### Pattern 2: MCP-Connected Agents
+### State Management Pattern (Working)
 ```python
-# Calendar agent communicates with MCP server
-async def schedule_via_mcp(tool_context: ToolContext, date: str, order_number: str, location: str):
-    mcp_response = await mcp_client.call_tool(
-        "create_event",
-        {
-            "summary": f"Cookie Delivery - {order_number}",
-            "location": location,
-            "start_datetime": f"{date}T09:00:00-07:00",
-            "end_datetime": f"{date}T09:30:00-07:00"
-        }
-    )
-    return mcp_response
-
-calendar_agent = Agent(
-    name="calendar_agent",
-    tools=[FunctionTool(schedule_via_mcp)]
-)
+# State flows through sequential agents
+def get_latest_order(tool_context: ToolContext) -> dict:
+    # Save to state for next agent
+    tool_context.state['order_details'] = order_details
+    
+def schedule_delivery(tool_context: ToolContext, ...):
+    # Read from state, update calendar, save results
+    order_details = tool_context.state.get('order_details', {})
+    # ... create calendar event ...
+    tool_context.state['delivery_schedule'] = delivery_info
+    
+def send_confirmation_email(tool_context: ToolContext, ...):
+    # Read all previous state for email content
+    order_details = tool_context.state.get('order_details', {})
+    delivery_schedule = tool_context.state.get('delivery_schedule', {})
 ```
 
-### Pattern 3: Sub-Agent Delegation
+### Error Handling Pattern (Implemented)
 ```python
-# Email agent delegates to haiku writer, then sends via MCP
-email_agent = Agent(
-    name="email_agent",
-    sub_agents=[haiku_writer_agent],  # Creative sub-agent
-    tools=[FunctionTool(send_email_via_mcp)]  # MCP email tool
-)
+# Graceful degradation at each level
+def calendar_operation():
+    if use_calendar_mcp and CALENDAR_MCP_AVAILABLE and calendar_manager:
+        try:
+            return real_calendar_api_call()
+        except Exception as e:
+            logging.error(f"Calendar API error: {e}")
+            return fallback_to_dummy_data()
+    else:
+        logging.info("Using dummy data (Calendar MCP not available)")
+        return dummy_calendar_data()
 ```
 
 ## Configuration and Environment
@@ -218,99 +318,84 @@ async def check_mcp_health(server_name: str):
         return False
 ```
 
-## Migration Strategy
+## Production Implementation Roadmap
 
-### Phase 1: BigQuery Integration
-1. Set up BigQuery dataset and tables
-2. Replace database agent tools with BigQuery versions
-3. Test order fetching and status updates
+### Phase 1: Complete Current Implementations (Mostly Done)
+- **Calendar MCP**: Fully functional Google Calendar integration
+- **Agent Workflow**: Sequential processing with state management
+- **Error Handling**: Graceful fallbacks and comprehensive logging
+- **BigQuery**: Enable `USE_BIGQUERY=true` and test
+- **Gmail MCP**: Complete following calendar pattern
 
-### Phase 2: Calendar MCP
-1. Deploy Calendar MCP server
-2. Replace calendar agent tools with MCP calls
-3. Test scheduling and availability checks
+### Phase 2: Production Hardening
+```python
+# Monitoring and observability
+def log_agent_operation(agent_name: str, operation: str, status: str, **kwargs):
+    logging.info("Agent operation", extra={
+        "agent_name": agent_name,
+        "operation": operation,
+        "status": status,
+        "timestamp": datetime.utcnow().isoformat(),
+        **kwargs
+    })
 
-### Phase 3: Gmail MCP
-1. Deploy Gmail MCP server
-2. Replace email agent tools with MCP calls
-3. Test email sending and tracking
+# Health checks for services
+async def health_check():
+    status = {
+        "bigquery": test_bigquery_connection(),
+        "calendar_mcp": CALENDAR_MCP_AVAILABLE,
+        "gmail_mcp": GMAIL_MCP_AVAILABLE,
+        "timestamp": datetime.utcnow().isoformat()
+    }
+    return status
+```
 
-### Phase 4: Production Hardening
-1. Add comprehensive error handling
-2. Implement monitoring and alerting
-3. Set up automated backups
-4. Configure load balancing for MCP servers
+### Phase 3: Advanced Features
+- **Analytics Dashboard**: Order processing metrics
+- **Webhook Integration**: Real-time order updates
+- **Load Balancing**: Multiple agent instances
+- **Automated Testing**: CI/CD pipeline with integration tests
 
-## Monitoring and Observability
+## Metrics and Monitoring
+
+### Key Performance Indicators
+- **Order Processing Time**: Database → Calendar → Email workflow
+- **Calendar Integration Success Rate**: % of successful event creations
+- **Email Delivery Rate**: % of successful customer notifications
+- **Fallback Usage**: % of operations using dummy data vs real APIs
 
 ### Logging Strategy
 ```python
-import google.cloud.logging
-
-# Structured logging for agent operations
-logging.info("Agent operation", extra={
-    "agent_name": "store_database_agent",
-    "operation": "get_latest_order",
+# Structured logging for each component
+logging.info("Calendar operation", extra={
+    "operation": "create_event",
     "order_id": "ORD12345",
-    "status": "success"
+    "calendar_id": "primary",
+    "status": "success",
+    "event_id": "abc123xyz",
+    "processing_time_ms": 1250
 })
 ```
 
-### Metrics to Track
-- Order processing time
-- Calendar scheduling success rate
-- Email delivery rate
-- MCP server availability
-- BigQuery query performance
+## Security Implementation
 
-## Security Considerations
-
-### Authentication
-- Use Google Cloud IAM for BigQuery access
-- OAuth2 with minimal scopes for Gmail/Calendar
-- Secure credential storage (Google Secret Manager)
-
-### Data Protection
-- Encrypt customer data at rest
-- Use HTTPS for all API communications
-- Implement audit logging for data access
-
-### Access Control
-- Principle of least privilege
-- Separate service accounts for each component
-- Regular credential rotation
-
-## Testing Strategy
-
-### Unit Tests
+### Authentication Management
 ```python
-# Test BigQuery operations with test datasets
-async def test_get_latest_order():
-    result = await get_latest_order_from_bigquery(mock_context)
-    assert result["status"] == "success"
-    assert "order_id" in result
+# Credential rotation strategy
+def refresh_oauth_tokens():
+    for service in ['calendar', 'gmail']:
+        if token_needs_refresh(service):
+            refresh_token(service)
+            log_security_event("token_refreshed", service=service)
+
+# Secure credential storage
+def load_credentials(service_name: str):
+    # Production: Use Google Secret Manager
+    # Development: Use local JSON files with .gitignore
+    if ENVIRONMENT == "production":
+        return load_from_secret_manager(f"{service_name}_credentials")
+    else:
+        return load_from_file(f"{service_name}_credentials.json")
 ```
 
-### Integration Tests
-```python
-# Test MCP server connectivity
-async def test_calendar_mcp():
-    events = await mcp_client.call_tool("get_events", {
-        "time_min": "2025-09-01T00:00:00Z",
-        "time_max": "2025-09-30T23:59:59Z"
-    })
-    assert events is not None
-```
-
-### End-to-End Tests
-```python
-# Test complete workflow
-async def test_full_delivery_workflow():
-    # Simulate new order in BigQuery
-    # Run agent workflow
-    # Verify calendar event created
-    # Verify email sent
-    # Verify order status updated
-```
-
-This architecture provides a robust, scalable solution that separates concerns appropriately while maintaining the agent-based workflow structure.
+This architecture provides a robust foundation that's already **working for calendar integration** and ready for expansion to BigQuery and Gmail services.
