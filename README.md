@@ -103,14 +103,13 @@ python bigquery-utils/create_bigquery_environment.py
 USE_BIGQUERY=true
 ```
 
-7. **Run the Agent System**
+7. **Run the Agent System with the WebUI**
 ```bash
 # The system will automatically:
 # - Use real Google Calendar if MCP configured
 # - Fall back to dummy data for missing services
-# - Run sequential workflow with all agents
 
-python agent.py
+bash adk web
 ```
 
 ## Environment Setup
