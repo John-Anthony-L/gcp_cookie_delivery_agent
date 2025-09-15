@@ -1,29 +1,6 @@
 # Cookie Delivery Agent System
 
-A sophisticated multi-agent system built with Google ADK tha5. **Gmail LangChain Setup (Implemented)**
-```bash
-# Navigate to Gmail LangChain directory
-cd gmail_langchain/
-
-# The Gmail integration is fully implemented using LangChain Community toolkit!
-# You need OAuth2 credentials:
-# 1. Go to Google Cloud Console
-# 2. Enable Gmail API
-# 3. Create OAuth 2.0 Client ID (Desktop Application)
-# 4. Download and save as gmail_credentials.json in this directory
-
-# Test the Gmail integration
-python test_gmail_integration.py
-```
-
-6. **Enable Gmail LangChain Integration**
-```bash
-# Edit .env file and set:
-USE_GMAIL_LANGCHAIN=true
-BUSINESS_EMAIL=deliveries@yourbusiness.com
-```
-
-7. **BigQuery Setup (ADK Toolset Ready)** automates cookie delivery order processing, scheduling, and customer communication. The system integrates with BigQuery using Google's first-party ADK toolset for order management, Google Calendar via MCP for delivery scheduling, and Gmail for customer notifications.
+A multi-agent system built with Google ADK that automates cookie delivery order processing, scheduling, and customer communication. The system integrates with BigQuery for order management, Google Calendar for delivery scheduling, and Gmail for customer notifications.
 
 ## Architecture Overview
 
@@ -44,8 +21,6 @@ BUSINESS_EMAIL=deliveries@yourbusiness.com
 │  (ADK Toolset)  │    │  (Business Acct) │    │ (LangChain API) │
 └─────────────────┘    └──────────────────┘    └─────────────────┘
 ```
-
-**Legend**: Fully Implemented | Partial/Structure Only | In Progress
 
 ### Agent Workflow
 
@@ -82,13 +57,12 @@ gcloud auth application-default login
 gcloud config set project YOUR_PROJECT_ID
 ```
 
-4. **Calendar MCP Setup (Implemented)**
+4. **Calendar MCP Setup**
 ```bash
 # Navigate to calendar MCP directory
 cd mcp-servers/calendar/
 
-# The calendar MCP server is already implemented!
-# You just need OAuth2 credentials:
+# Set up OAuth2 credentials:
 # 1. Go to Google Cloud Console
 # 2. Enable Calendar API
 # 3. Create OAuth 2.0 Client ID (Desktop Application)
@@ -105,9 +79,9 @@ USE_CALENDAR_MCP=true
 BUSINESS_CALENDAR_ID=primary  # or your specific calendar ID
 ```
 
-6. **BigQuery Setup (ADK Toolset Ready)**
+6. **BigQuery Setup**
 ```bash
-# BigQuery integration now uses Google's first-party ADK toolset
+# BigQuery integration uses Google's first-party ADK toolset
 # Authentication is handled via Application Default Credentials
 
 # Set up Google Cloud authentication
@@ -122,14 +96,14 @@ USE_BIGQUERY=true
 python bigquery-utils/create_bigquery_environment.py
 ```
 
-6. **Run the Agent System with the WebUI**
+7. **Run the Agent System**
 ```bash
 # The system will automatically:
 # - Use real Google Calendar if MCP configured
 # - Use real Gmail if LangChain configured
 # - Fall back to dummy data for missing services
 
-bash adk web
+adk web
 ```
 
 ## Environment Setup
@@ -149,7 +123,7 @@ GOOGLE_CLOUD_PROJECT=your-gcp-project-id
 MODEL=gemini-2.5-flash
 
 # =============================================================================
-# GMAIL LANGCHAIN INTEGRATION (FULLY IMPLEMENTED)
+# GMAIL LANGCHAIN INTEGRATION
 # =============================================================================
 # Set to 'true' to use real Gmail via LangChain Community toolkit
 USE_GMAIL_LANGCHAIN=true
@@ -158,7 +132,7 @@ USE_GMAIL_LANGCHAIN=true
 BUSINESS_EMAIL=deliveries@yourbusiness.com
 
 # =============================================================================
-# CALENDAR MCP INTEGRATION (IMPLEMENTED)
+# CALENDAR MCP INTEGRATION
 # =============================================================================
 # Set to 'true' to use real Google Calendar via MCP server
 USE_CALENDAR_MCP=true
@@ -168,7 +142,7 @@ USE_CALENDAR_MCP=true
 BUSINESS_CALENDAR_ID=primary
 
 # =============================================================================
-# BIGQUERY ADK INTEGRATION (FULLY IMPLEMENTED)
+# BIGQUERY ADK INTEGRATION
 # =============================================================================
 # Set to 'true' to use Google's first-party ADK BigQuery toolset
 # Set to 'false' to use dummy data for development/testing
@@ -191,11 +165,11 @@ ENVIRONMENT=production
 LOG_LEVEL=INFO
 ```
 
-### Gmail LangChain Integration Setup (IMPLEMENTED)
+### Gmail LangChain Integration Setup
 
-The Gmail integration is **fully implemented using LangChain Community Gmail toolkit**! Here's what's ready:
+The Gmail integration uses **LangChain Community Gmail toolkit** for complete Gmail API functionality. Here's what's available:
 
-#### What's Working:
+#### Features:
 - Gmail API authentication via OAuth2 with automatic token refresh
 - Email sending with HTML and plain text support
 - Message search with powerful Gmail query syntax
@@ -221,11 +195,11 @@ gmail_langchain/
 └── README.md                    # Setup documentation
 ```
 
-### Calendar MCP Server Setup (IMPLEMENTED)
+### Calendar MCP Server Setup
 
-The Calendar MCP server is **fully implemented and functional**! Here's what's ready:
+The Calendar MCP server provides Google Calendar integration with the following features:
 
-#### What's Working:
+#### Features:
 - Google Calendar API authentication via OAuth2
 - Event creation, reading, and availability checking
 - RFC3339 datetime formatting for Google Calendar
@@ -343,16 +317,16 @@ python gmail_langchain/test_gmail_integration.py  # Test integration
 - `get_message`: Retrieve specific emails and thread details
 - `oauth2_authentication`: Automatic token refresh and credential management
 
-## Current Implementation: What's Working
+## Current Implementation
 
-### BigQuery ADK Integration (Production Ready)
+### BigQuery ADK Integration
 - **Google's First-Party ADK Toolset**: Uses official BigQuery ADK integration
 - **Application Default Credentials**: Secure authentication via ADC
 - **WriteMode Configuration**: Proper data access control (BLOCKED, ALLOWED, PROTECTED)
 - **Async Compatibility**: Resolved async conflicts for ADK web interface usage
 - **Available Tools**: list_dataset_ids, get_dataset_info, list_table_ids, get_table_info, execute_sql, ask_data_insights
 
-### Gmail LangChain Integration (Production Ready)
+### Gmail LangChain Integration
 - **LangChain Community Gmail Toolkit**: Uses official LangChain integration for Gmail API
 - **OAuth2 Authentication**: Secure authentication with automatic token refresh
 - **HTML Email Support**: Rich formatting for professional customer communications
@@ -377,7 +351,7 @@ python gmail_langchain/test_gmail_integration.py  # Test integration
 - **Authentication Recovery**: Handles OAuth2 token refresh automatically for both Calendar and Gmail
 - **Service Availability Checks**: Smart detection of configured vs. fallback services
 
-### Next Implementation Steps
+### Next Steps
 1. **Production Hardening**: Add monitoring and alerting
 2. **Extended BigQuery Analytics**: Leverage ask_data_insights for business intelligence
 3. **Email Templates**: Enhanced HTML email templates for different order types
@@ -393,7 +367,7 @@ python gmail_langchain/test_gmail_integration.py  # Test integration
 
 ## Testing & Validation
 
-### BigQuery ADK Testing (Production Ready)
+### BigQuery ADK Testing
 The system includes a comprehensive test suite for the BigQuery ADK integration:
 
 ```bash
@@ -434,7 +408,7 @@ Integration Tests (test_adk_integration.py): PASSED
 Test Quality: EXCELLENT
 ```
 
-### Calendar MCP Testing (Working)
+### Calendar MCP Testing
 ```bash
 # Test real Google Calendar integration
 cd mcp-servers/calendar/
@@ -446,7 +420,7 @@ python test_calendar_functions.py
 # Event creation and availability checking working
 ```
 
-### Agent Integration Testing (Working)
+### Agent Integration Testing
 ```bash
 # Test agent with real calendar integration
 python agent.py
@@ -503,7 +477,7 @@ cookie-scheduler-agent/
 │   └── README.md                      # Directory documentation
 │
 ├── mcp-servers/              # MCP Server implementations
-│   ├── calendar/             # FULLY IMPLEMENTED Calendar MCP
+│   ├── calendar/             # Calendar MCP
 │   │   ├── calendar_mcp_server.py      # Complete CalendarManager class
 │   │   ├── calendar_credentials.json   # OAuth2 credentials (you create)
 │   │   ├── calendar_token.json         # Auto-generated tokens
@@ -511,8 +485,6 @@ cookie-scheduler-agent/
 │   ├── start_calendar_mcp.py           # MCP server startup script
 │   └── setup_calendar_credentials.md   # Setup instructions
 ```
-
-**Legend**: Fully Implemented | Structure Ready | In Progress | You Create | Documentation
 
 ## Security Notes
 
@@ -635,4 +607,4 @@ For issues and questions:
 
 ---
 
-**Note**: This system is designed for production use with real business accounts. Always test thoroughly in a development environment before deploying to production.
+**Note**: This system demonstrates production-ready integration patterns with Google Cloud services. Always test thoroughly in a development environment before deploying to production.
