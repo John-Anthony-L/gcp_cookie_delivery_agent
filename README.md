@@ -456,8 +456,7 @@ For detailed testing documentation, see `cookie-scheduler-agent/bigquery_utils/T
 
 ```
 cookie-scheduler-agent/
-├── agent.py                    # Legacy agent definitions (see agents.py for modern implementation)
-├── agents.py                   # Modern ADK agent definitions with BigQuery toolset
+├── agent.py                    # main adk agent orchestration
 ├── dummy_data.py              # Fallback data for testing
 ├── requirements.txt           # Python dependencies
 ├── .env.example              # Example environment configuration
