@@ -105,57 +105,6 @@ def create_dataset(client: bigquery.Client) -> bool:
             logging.error(f"Failed to create dataset: {e}")
             return False
 
-def create_orders_table(client: bigquery.Client) -> bool:
-    """Create the orders table with proper schema."""
-    table_id = f"{PROJECT_ID}.{DATASET_ID}.{ORDERS_TABLE}"
-    
-    try:
-        client.get_table(table_id)
-        logging.info(f"Table {table_id} already exists.")
-        return True
-    except NotFound:
-        logging.info(f"Creating table {table_id}...")
-        
-        schema = [
-            bigquery.SchemaField("order_id", "STRING", mode="REQUIRED"),
-            bigquery.SchemaField("order_number", "STRING", mode="REQUIRED"),
-            bigquery.SchemaField("customer_email", "STRING", mode="REQUIRED"),
-            bigquery.SchemaField("customer_name", "STRING", mode="REQUIRED"),
-            bigquery.SchemaField("customer_phone", "STRING"),
-            bigquery.SchemaField("order_items", "RECORD", mode="REPEATED", fields=[
-                bigquery.SchemaField("item_name", "STRING"),
-                bigquery.SchemaField("quantity", "INTEGER"),
-                bigquery.SchemaField("unit_price", "FLOAT"),
-            ]),
-            bigquery.SchemaField("delivery_address", "RECORD", fields=[
-                bigquery.SchemaField("street", "STRING"),
-                bigquery.SchemaField("city", "STRING"),
-                bigquery.SchemaField("state", "STRING"),
-                bigquery.SchemaField("zip_code", "STRING"),
-                bigquery.SchemaField("country", "STRING"),
-            ]),
-            bigquery.SchemaField("delivery_location", "STRING"),
-            bigquery.SchemaField("delivery_request_date", "DATE"),
-            bigquery.SchemaField("delivery_time_preference", "STRING"),
-            bigquery.SchemaField("order_status", "STRING", mode="REQUIRED"),
-            bigquery.SchemaField("total_amount", "FLOAT"),
-            bigquery.SchemaField("order_date", "TIMESTAMP"),
-            bigquery.SchemaField("special_instructions", "STRING"),
-            bigquery.SchemaField("created_at", "TIMESTAMP"),
-            bigquery.SchemaField("updated_at", "TIMESTAMP"),
-        ]
-        
-        table = bigquery.Table(table_id, schema=schema)
-        table.description = "Cookie delivery orders with customer and delivery information"
-        
-        try:
-            table = client.create_table(table, timeout=30)
-            logging.info(f"Created table {table.project}.{table.dataset_id}.{table.table_id}")
-            return True
-        except Exception as e:
-            logging.error(f"Failed to create table: {e}")
-            return False
-
 def insert_sample_data(client: bigquery.Client, overwrite: bool = True) -> bool:
     """Insert sample data into the orders table."""
     table_id = f"{PROJECT_ID}.{DATASET_ID}.{ORDERS_TABLE}"

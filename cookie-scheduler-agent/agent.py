@@ -35,11 +35,29 @@ except Exception as e:
     CALENDAR_MCP_AVAILABLE = False
 
 try:
-    from .bigquery_utils.bigquery_tools import get_latest_order_from_bigquery, update_order_status_in_bigquery
-    BIGQUERY_AVAILABLE = True
+    from .bigquery_utils.bigquery_tools import get_bigquery_toolset, get_latest_order_from_bigquery, update_order_status_in_bigquery
+    # Initialize the ADK BigQuery toolset
+    bigquery_toolset = get_bigquery_toolset()
+    BIGQUERY_AVAILABLE = bigquery_toolset is not None
+    logging.info(f"ADK BigQuery Toolset: {'✅ Available' if BIGQUERY_AVAILABLE else '❌ Not available'}")
 except ImportError as e:
-    logging.warning(f"BigQuery tools not available: {e}")
+    logging.warning(f"BigQuery ADK toolset not available: {e}")
+    bigquery_toolset = None
     BIGQUERY_AVAILABLE = False
+
+try:
+    from .gmail_langchain.email_utils import send_confirmation_email_langchain
+    from .gmail_langchain.gmail_manager import gmail_manager, LANGCHAIN_GMAIL_AVAILABLE
+    GMAIL_LANGCHAIN_AVAILABLE = LANGCHAIN_GMAIL_AVAILABLE and gmail_manager.is_available()
+    logging.info(f"LangChain Gmail: {'Successfully connected' if GMAIL_LANGCHAIN_AVAILABLE else 'Not available'}")
+except ImportError as e:
+    logging.warning(f"LangChain Gmail not available: {e}")
+    gmail_manager = None
+    GMAIL_LANGCHAIN_AVAILABLE = False
+except Exception as e:
+    logging.warning(f"LangChain Gmail setup failed: {e}")
+    gmail_manager = None
+    GMAIL_LANGCHAIN_AVAILABLE = False
 
 # --- Setup and Configuration ---
 
@@ -58,62 +76,83 @@ load_dotenv()
 model_name = os.getenv("MODEL", "gemini-2.5-flash")
 use_bigquery = os.getenv("USE_BIGQUERY", "false").lower() == "true"
 use_calendar_mcp = os.getenv("USE_CALENDAR_MCP", "false").lower() == "true"
+use_gmail_langchain = os.getenv("USE_GMAIL_LANGCHAIN", "false").lower() == "true"
 business_calendar_id = os.getenv("BUSINESS_CALENDAR_ID", "primary")
+business_email = os.getenv("BUSINESS_EMAIL", "deliveries@cookiebusiness.com")
 
 logging.info(f"Using model: {model_name}")
 logging.info(f"BigQuery integration: {'enabled' if use_bigquery and BIGQUERY_AVAILABLE else 'disabled (using dummy data)'}")
 logging.info(f"Calendar MCP integration: {'enabled' if use_calendar_mcp and CALENDAR_MCP_AVAILABLE else 'disabled (using dummy data)'}")
+logging.info(f"Gmail LangChain integration: {'enabled' if use_gmail_langchain and GMAIL_LANGCHAIN_AVAILABLE else 'disabled (using dummy data)'}")
 
 
 def get_latest_order(tool_context: ToolContext) -> dict:
     """
     Fetches the most recent order with 'order_placed' status from the database.
-    Uses BigQuery if enabled, otherwise uses dummy data.
+    Uses BigQuery ADK toolset if enabled, otherwise uses dummy data.
     """
-    logging.info("Tool: get_latest_order called.")
+    logging.info("🔍 Tool: get_latest_order called.")
     
-    # Use BigQuery if available and enabled
+    # Use BigQuery ADK toolset if available and enabled
     if use_bigquery and BIGQUERY_AVAILABLE:
-        import asyncio
-        return asyncio.run(get_latest_order_from_bigquery(tool_context))
+        # With ADK toolset, we return a structured query for the agent to execute
+        query_info = get_latest_order_from_bigquery(tool_context)
+        if query_info.get("status") == "query_ready":
+            logging.info("📝 BigQuery query prepared for ADK execution")
+            return {
+                "status": "bigquery_query_ready",
+                "instruction": "Use the execute_sql tool to run this query",
+                "query": query_info["query"],
+                "message": "Query prepared for BigQuery ADK toolset execution"
+            }
+        else:
+            logging.error(f"❌ Failed to prepare BigQuery query: {query_info.get('message')}")
     
     # Fallback to dummy data
-    logging.info("Using dummy data for order retrieval")
+    logging.info("📊 Using dummy data for order retrieval")
     for order_id, order_details in DUMMY_ORDER_DATABASE.items():
         if order_details["order_status"] == "order_placed":
-            logging.info(f"Found latest order: {order_id}")
+            logging.info(f"✅ Found latest order: {order_id}")
             # Save relevant details to the agent's state
             tool_context.state['order_details'] = order_details
             return order_details
     
-    logging.warning("No new orders found with status 'order_placed'.")
+    logging.warning("⚠️ No new orders found with status 'order_placed'.")
     return {"status": "error", "message": "No new orders found with status 'order_placed'."}
 
 def update_order_status(tool_context: ToolContext, order_number: str, new_status: str) -> dict:
     """
     Updates the status of a given order in the database.
-    Uses BigQuery if enabled, otherwise uses dummy data.
+    Uses BigQuery ADK toolset if enabled, otherwise uses dummy data.
     """
-    logging.info(f"Tool: update_order_status called for {order_number} to set status {new_status}.")
+    logging.info(f"📝 Tool: update_order_status called for {order_number} to set status {new_status}.")
     
-    # Use BigQuery if available and enabled
+    # Use BigQuery ADK toolset if available and enabled
     if use_bigquery and BIGQUERY_AVAILABLE:
-        import asyncio
-        return asyncio.run(update_order_status_in_bigquery(tool_context, order_number, new_status))
+        query_info = update_order_status_in_bigquery(tool_context, order_number, new_status)
+        if query_info.get("status") == "query_ready":
+            logging.info("📝 BigQuery update query prepared for ADK execution")
+            return {
+                "status": "bigquery_update_ready",
+                "instruction": "Use the execute_sql tool to run this update query",
+                "query": query_info["query"],
+                "order_number": order_number,
+                "new_status": new_status,
+                "message": f"Update query prepared to change order {order_number} to {new_status}"
+            }
+        else:
+            logging.error(f"❌ Failed to prepare update query: {query_info.get('message')}")
     
     # Fallback to dummy data
-    logging.info("Using dummy data for order status update")
-    if order_number in DUMMY_ORDER_DATABASE:
-        DUMMY_ORDER_DATABASE[order_number]["order_status"] = new_status
-        DUMMY_ORDER_DATABASE[order_number]["updated_at"] = datetime.now().isoformat() + "Z"
-        logging.info(f"Order {order_number} status updated to '{new_status}'.")
-        # Log the final state for review
-        print("--- FINAL DATABASE STATE ---")
-        print(DUMMY_ORDER_DATABASE)
-        return {"status": "success", "order_number": order_number, "new_status": new_status}
-    else:
-        logging.error(f"Order {order_number} not found in database.")
-        return {"status": "error", "message": f"Order {order_number} not found."}
+    logging.info("📊 Using dummy data for order status update")
+    for order_id, order_details in DUMMY_ORDER_DATABASE.items():
+        if order_details.get("order_number") == order_number:
+            DUMMY_ORDER_DATABASE[order_id]["order_status"] = new_status
+            logging.info(f"✅ Updated order {order_number} status to {new_status} (dummy data)")
+            return {"status": "success", "order_number": order_number, "new_status": new_status, "source": "dummy_data"}
+    
+    logging.warning(f"⚠️ Order {order_number} not found.")
+    return {"status": "error", "message": f"Order {order_number} not found."}
 
 def get_delivery_schedule(tool_context: ToolContext) -> dict:
     """
@@ -340,32 +379,48 @@ This event was created automatically by the Cookie Delivery Agent.
 
 def send_confirmation_email(tool_context: ToolContext, recipient_email: str, subject: str, body: str) -> dict:
     """
-    Sends an email to the customer via Gmail.
+    Sends an email to the customer via LangChain Gmail toolkit.
     
-    In production, this would:
-    1. Connect to Gmail via MCP server (business account: deliveries@cookiebusiness.com)
-    2. Compose and send email with proper formatting
-    3. Handle authentication and delivery status
-    4. Return message ID for tracking
+    Uses LangChain Gmail if available and enabled, otherwise falls back to dummy data.
     """
     logging.info(f"Tool: send_confirmation_email called for {recipient_email}.")
     
-    # TODO: Replace with MCP server call to Gmail
-    # This would be something like:
-    # mcp_response = await mcp_client.call_tool(
-    #     "gmail_send_email",
-    #     {
-    #         "to": recipient_email,
-    #         "from": "deliveries@cookiebusiness.com",
-    #         "subject": subject,
-    #         "body": body,
-    #         "body_type": "html"  # or "plain"
-    #     }
-    # )
+    # Use LangChain Gmail if available and enabled
+    if use_gmail_langchain and GMAIL_LANGCHAIN_AVAILABLE and gmail_manager:
+        try:
+            logging.info(f"LangChain Gmail: Sending confirmation email to {recipient_email}")
+            
+            result = gmail_manager.send_email(
+                to=recipient_email,
+                subject=subject,
+                body=body,
+                body_type="html"
+            )
+            
+            if result["status"] == "success":
+                logging.info(f"LangChain Gmail: Successfully sent email {result['message_id']}")
+                return {
+                    "status": "success",
+                    "recipient": recipient_email,
+                    "subject": subject,
+                    "message_id": result["message_id"],
+                    "timestamp": result["timestamp"],
+                    "method": "langchain_gmail_toolkit"
+                }
+            else:
+                logging.error(f"LangChain Gmail: Failed to send email - {result.get('message')}")
+                # Fall through to dummy implementation
+                
+        except Exception as e:
+            logging.error(f"LangChain Gmail error: {e}")
+            # Fall through to dummy implementation
+    
+    # Fallback to dummy email (for development/testing)
+    logging.info("Using dummy email implementation")
     
     email_content = f"""
-    --- SENDING EMAIL VIA GMAIL MCP SERVER ---
-    From: deliveries@cookiebusiness.com
+    --- SIMULATED EMAIL SEND ---
+    From: {business_email}
     To: {recipient_email}
     Subject: {subject}
     ---
@@ -374,11 +429,15 @@ def send_confirmation_email(tool_context: ToolContext, recipient_email: str, sub
     """
     # Print the email to the console for verification
     print(email_content)
-    logging.info("Email sent successfully via Gmail MCP server (simulated).")
+    logging.info("Email sent successfully (simulated).")
+    
     return {
         "status": "success", 
         "recipient": recipient_email,
-        "message_id": f"msg_{recipient_email}_{datetime.now().strftime('%Y%m%d_%H%M%S')}"
+        "subject": subject,
+        "message_id": f"msg_{recipient_email}_{datetime.now().strftime('%Y%m%d_%H%M%S')}",
+        "timestamp": datetime.now().isoformat(),
+        "method": "dummy_data"
     }
 
 def check_delivery_availability(tool_context: ToolContext, date: str, time_preference: str = "morning") -> dict:
@@ -476,20 +535,40 @@ def save_delivery_month(tool_context: ToolContext, date_string: str) -> dict:
 # --- AGENT DEFINITIONS ---
 
 ## Database Agent
-# This agent's responsibility is to fetch order data from BigQuery.
+# This agent's responsibility is to fetch order data from BigQuery using ADK toolset.
+store_database_agent_tools = [get_latest_order]
+
+# Add BigQuery ADK toolset if available
+if BIGQUERY_AVAILABLE and bigquery_toolset:
+    store_database_agent_tools.append(bigquery_toolset)
+    logging.info("✅ Added BigQuery ADK toolset to store_database_agent")
+
 store_database_agent = Agent(
     name="store_database_agent",
     model=model_name,
-    description="Responsible for getting and updating the BigQuery database for orders.",
-    instruction="""
-    You are the order manager with access to the BigQuery orders database. 
-    Your primary job is to fetch the latest order from the database that has the status 'order_placed'. 
-    Use the 'get_latest_order' tool to accomplish this.
+    description="Responsible for getting and updating the BigQuery database for orders using Google's first-party ADK toolset.",
+    instruction=f"""
+    You are the order manager with access to the BigQuery orders database {'using Google\'s first-party ADK toolset' if BIGQUERY_AVAILABLE else '(using dummy data fallback)'}.
     
-    The order details will be automatically saved to the state for other agents to use.
-    Make sure to handle any database connection errors gracefully.
+    **BigQuery Integration Status**: {'✅ ADK BigQuery Toolset Available' if BIGQUERY_AVAILABLE else '⚠️ Using Dummy Data'}
+    
+    Your primary job is to fetch the latest order from the database that has the status 'order_placed'.
+    
+    **WORKFLOW:**
+    1. First, use the 'get_latest_order' tool to get query information
+    2. If the response indicates "bigquery_query_ready", use the 'execute_sql' tool to run the provided query
+    3. Parse the BigQuery results and save the order details to the agent state
+    4. If BigQuery is not available, the tool will automatically fall back to dummy data
+    
+    **Available Tools:**
+    - get_latest_order: Prepares the query or returns dummy data
+    {'- execute_sql: Executes SQL queries in BigQuery (ADK toolset)' if BIGQUERY_AVAILABLE else ''}
+    {'- list_dataset_ids: Lists available BigQuery datasets (ADK toolset)' if BIGQUERY_AVAILABLE else ''}
+    {'- get_table_info: Gets BigQuery table schema information (ADK toolset)' if BIGQUERY_AVAILABLE else ''}
+    
+    Make sure to handle any database connection errors gracefully and always save order details to the state.
     """,
-    tools=[get_latest_order],
+    tools=store_database_agent_tools,
 )
 ## Calendar Agent
 # This agent checks for availability and schedules the delivery via Google Calendar MCP.
@@ -537,21 +616,34 @@ haiku_writer_agent = Agent(
 )
 
 ## Email Agent
-# This agent handles all customer communication via Gmail MCP server and finalizes the order status.
+# This agent handles all customer communication via Gmail and finalizes the order status in BigQuery.
+email_agent_tools = [send_confirmation_email, update_order_status]
+
+# Add BigQuery ADK toolset if available for order status updates
+if BIGQUERY_AVAILABLE and bigquery_toolset:
+    email_agent_tools.append(bigquery_toolset)
+    logging.info("✅ Added BigQuery ADK toolset to email_agent")
+
 email_agent = Agent(
     name="email_agent",
     model=model_name,
-    description="Writes and sends emails via Gmail MCP server, and finalizes the order status in BigQuery.",
-    instruction="""
-    You are the customer communication specialist with access to the business Gmail account via MCP server. 
-    Your multi-step task is to confirm the delivery and update the order status.
+    description="Writes and sends emails via Gmail, and finalizes the order status in BigQuery using ADK toolset.",
+    instruction=f"""
+    You are the customer communication specialist with access to the business Gmail account {'and BigQuery ADK toolset' if BIGQUERY_AVAILABLE else '(using dummy data fallback)'}.
+    
+    **Integration Status**: 
+    - Gmail: {'✅ LangChain Available' if GMAIL_LANGCHAIN_AVAILABLE else '⚠️ Using Dummy Data'}
+    - BigQuery: {'✅ ADK Toolset Available' if BIGQUERY_AVAILABLE else '⚠️ Using Dummy Data'}
+    
+    Your multi-step task is to confirm the delivery and update the order status:
 
     1.  **Generate Haiku**: Delegate to your `haiku_writer_agent` to generate a haiku based on the delivery month and the order items from the state.
 
-    2.  **Update Status**: use the `update_order_status` tool to change the order status to 'scheduled' in BigQuery.
-        Use the order number from the state.
+    2.  **Update Status**: Use the `update_order_status` tool to change the order status to 'scheduled'.
+        {'- If the response indicates "bigquery_update_ready", use the execute_sql tool to run the provided update query' if BIGQUERY_AVAILABLE else '- This will update dummy data if BigQuery is not available'}
+        - Use the order number from the state
 
-    3.  **Send Email**: Use the `send_confirmation_email` tool to send via the business Gmail account (deliveries@cookiebusiness.com). 
+    3.  **Send Email**: Use the `send_confirmation_email` tool to send via the business Gmail account. 
         - Send to the customer email from the state
         - Subject: "Your Cookie Delivery is Scheduled!"
         - Body: Include a personalized confirmation message with:
@@ -561,10 +653,15 @@ email_agent = Agent(
           * The generated haiku
           * Business contact information
 
+    **Available Tools:**
+    - update_order_status: Prepares update query or updates dummy data
+    {'- execute_sql: Executes BigQuery update queries (ADK toolset)' if BIGQUERY_AVAILABLE else ''}
+    - send_confirmation_email: Sends customer confirmation emails
+
     **Note**: All necessary information (order_details, delivery_month) will be available in the agent state from previous steps.
     """,
     sub_agents=[haiku_writer_agent],
-    tools=[send_confirmation_email, update_order_status],
+    tools=email_agent_tools,
 )
 
 

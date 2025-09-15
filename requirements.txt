@@ -37,4 +37,7 @@ mypy>=1.5.0
 # Optional: For enhanced email formatting
 jinja2>=3.1.0        # for email templates
 markdown>=3.4.0      # for rich email content
-langchain-community==0.3.20
+
+# LangChain Gmail Integration
+langchain-community>=0.3.20
+langchain-core>=0.3.20

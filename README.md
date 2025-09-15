@@ -1,13 +1,13 @@
 # Cookie Delivery Agent System
 
-A sophisticated multi-agent system built with Google ADK that automates cookie delivery order processing, scheduling, and customer communication. The system integrates with BigQuery for order management, **Google Calendar via MCP** for delivery scheduling, and Gmail for customer notifications.
+A sophisticated multi-agent system built with Google ADK that automates cookie delivery order processing, scheduling, and customer communication. The system integrates with BigQuery using Google's first-party ADK toolset for order management, Google Calendar via MCP for delivery scheduling, and Gmail for customer notifications.
 
 ## Current Implementation Status
 
+- **BigQuery ADK Integration**: Fully implemented using Google's official first-party ADK BigQuery toolset
 - **Calendar MCP Integration**: Fully functional Google Calendar API via MCP server
-- **Agent Workflow**: Complete sequential agent system with real calendar integration
-- **Fallback System**: Graceful degradation to dummy data when services unavailable
-- **BigQuery Integration**: Structure ready, needs configuration
+- **Agent Workflow**: Complete sequential agent system with real BigQuery and calendar integration
+- **Async Compatibility**: Resolved async conflicts for ADK web interface compatibility
 - **Gmail Integration**: Basic implementation, needs MCP server completion
 
 ## Architecture Overview
@@ -20,13 +20,13 @@ A sophisticated multi-agent system built with Google ADK that automates cookie d
                                                          ▼
 ┌─────────────────┐    ┌──────────────────┐    ┌─────────────────┐
 │ Database Agent  │    │  Calendar Agent  │    │   Email Agent   │
-│   (BigQuery)    │    │    MCP Server    │    │   MCP Server    │
+│ (BigQuery ADK)  │    │    MCP Server    │    │   MCP Server    │
 └─────────────────┘    └──────────────────┘    └─────────────────┘
          │                       │                       │
          ▼                       ▼                       ▼
 ┌─────────────────┐    ┌──────────────────┐    ┌─────────────────┐
 │    BigQuery     │    │ Google Calendar  │    │     Gmail       │
-│   (Structure)   │    │  (Business Acct) │    │ (Business Acct) │
+│  (ADK Toolset)  │    │  (Business Acct) │    │ (Business Acct) │
 └─────────────────┘    └──────────────────┘    └─────────────────┘
 ```
 
@@ -34,9 +34,9 @@ A sophisticated multi-agent system built with Google ADK that automates cookie d
 
 ### Agent Workflow
 
-1. **Database Agent**: Fetches new orders from BigQuery with status "order_placed"
+1. **Database Agent**: Fetches new orders from BigQuery using Google's first-party ADK toolset with status "order_placed"
 2. **Calendar Agent**: Checks availability and schedules delivery appointments
-3. **Email Agent**: Generates personalized confirmation emails with haikus and updates order status
+3. **Email Agent**: Generates personalized confirmation emails and updates order status in BigQuery
 
 ## Quick Start
 
@@ -90,17 +90,21 @@ USE_CALENDAR_MCP=true
 BUSINESS_CALENDAR_ID=primary  # or your specific calendar ID
 ```
 
-6. **BigQuery Setup (Optional - Structure Ready)**
+6. **BigQuery Setup (ADK Toolset Ready)**
 ```bash
-# Run the automated setup script
-./setup.sh
+# BigQuery integration now uses Google's first-party ADK toolset
+# Authentication is handled via Application Default Credentials
 
-# OR Setup BigQuery Database (Manual)
-python bigquery-utils/create_bigquery_environment.py
+# Set up Google Cloud authentication
+gcloud auth application-default login
+gcloud config set project YOUR_PROJECT_ID
 
 # Enable BigQuery Integration
 # Edit .env file and set:
 USE_BIGQUERY=true
+
+# Optional: Run BigQuery environment setup for sample data
+python bigquery-utils/create_bigquery_environment.py
 ```
 
 7. **Run the Agent System with the WebUI**
@@ -139,10 +143,11 @@ USE_CALENDAR_MCP=true
 BUSINESS_CALENDAR_ID=primary
 
 # =============================================================================
-# BIGQUERY INTEGRATION (STRUCTURE READY)
+# BIGQUERY ADK INTEGRATION (FULLY IMPLEMENTED)
 # =============================================================================
-# Set to 'true' to use real BigQuery, 'false' to use dummy data
-USE_BIGQUERY=false
+# Set to 'true' to use Google's first-party ADK BigQuery toolset
+# Set to 'false' to use dummy data for development/testing
+USE_BIGQUERY=true
 
 # =============================================================================
 # BUSINESS ACCOUNT CONFIGURATION
@@ -280,6 +285,13 @@ python gmail_mcp_server.py
 
 ## Current Implementation: What's Working
 
+### BigQuery ADK Integration (Production Ready)
+- **Google's First-Party ADK Toolset**: Uses official BigQuery ADK integration
+- **Application Default Credentials**: Secure authentication via ADC
+- **WriteMode Configuration**: Proper data access control (BLOCKED, ALLOWED, PROTECTED)
+- **Async Compatibility**: Resolved async conflicts for ADK web interface usage
+- **Available Tools**: list_dataset_ids, get_dataset_info, list_table_ids, get_table_info, execute_sql, ask_data_insights
+
 ### Calendar Agent with Real Google Calendar
 - **Real Google Calendar Integration**: Creates actual calendar events via MCP server
 - **Smart Fallback**: Uses dummy data when Calendar MCP unavailable
@@ -287,9 +299,9 @@ python gmail_mcp_server.py
 - **RFC3339 Datetime**: Proper timezone handling for Google Calendar API
 
 ### Agent Workflow (Sequential Processing)
-1. **Database Agent**: Fetches orders (dummy data with BigQuery structure ready)
-2. **Calendar Agent**: **Real Google Calendar scheduling** via MCP server
-3. **Email Agent**: Customer communication (basic implementation)
+1. **Database Agent**: Fetches orders using BigQuery ADK toolset with production-ready data access
+2. **Calendar Agent**: Real Google Calendar scheduling via MCP server
+3. **Email Agent**: Customer communication with BigQuery integration for order updates
 4. **Haiku Writer Sub-Agent**: Generates creative seasonal content
 
 ### Error Handling & Resilience
@@ -299,8 +311,8 @@ python gmail_mcp_server.py
 
 ### Next Implementation Steps
 1. **Complete Gmail MCP Server**: Similar to calendar implementation
-2. **Enable BigQuery Integration**: Activate real database operations
-3. **Production Hardening**: Add monitoring and alerting
+2. **Production Hardening**: Add monitoring and alerting
+3. **Extended BigQuery Analytics**: Leverage ask_data_insights for business intelligence
 
 ## Workflow Process
 
@@ -337,25 +349,33 @@ python agent.py
 # 4. Process sequential workflow
 ```
 
-### BigQuery Testing (Structure Ready)
+### BigQuery ADK Testing (Production Ready)
 ```bash
-# Test BigQuery connection (when enabled)
-python bigquery-utils/test_bigquery.py
+# Test BigQuery ADK toolset integration
+cd cookie-scheduler-agent/
+python test_bigquery_integration.py
 
-# Enable BigQuery in .env:
-USE_BIGQUERY=true
+# Expected output:
+# BigQuery ADK Integration Test Suite
+# All tests passed: toolset initialization, agent creation, async compatibility
 ```
 
 ## File Structure
 
 ```
 cookie-scheduler-agent/
-├── agent.py                    # Main agent definitions with real calendar integration
+├── agent.py                    # Legacy agent definitions (see agents.py for modern implementation)
+├── agents.py                   # Modern ADK agent definitions with BigQuery toolset
 ├── dummy_data.py              # Fallback data for testing
 ├── gmail_mcp_server.py        # Gmail MCP server (basic implementation)
+├── test_bigquery_integration.py # BigQuery ADK toolset integration tests
 ├── requirements.txt           # Python dependencies
 ├── .env.example              # Example environment configuration
 ├── .env                      # Your environment configuration (create this)
+│
+├── bigquery_utils/           # BigQuery ADK toolset integration
+│   ├── bigquery_tools.py     # ADK BigQuery toolset implementation
+│   └── test_bigquery.py      # Legacy test script
 │
 ├── mcp-servers/              # MCP Server implementations
 │   ├── calendar/             # FULLY IMPLEMENTED Calendar MCP
@@ -366,9 +386,8 @@ cookie-scheduler-agent/
 │   ├── start_calendar_mcp.py           # MCP server startup script
 │   └── setup_calendar_credentials.md   # Setup instructions
 │
-└── bigquery-utils/          # BigQuery integration (structure ready)
-    ├── bigquery_tools.py    # Database functions (implemented)
-    └── test_bigquery.py     # Test script (ready)
+└── tests/                    # Test files and validation scripts
+    └── test_bigquery_adk_integration.py  # Comprehensive ADK integration tests
 ```
 
 **Legend**: Fully Implemented | Structure Ready | In Progress | You Create | Documentation
@@ -425,19 +444,32 @@ cookie-scheduler-agent/
    ```
 
 
-### BigQuery Issues
+### BigQuery ADK Issues
 
-1. **BigQuery Permission Denied**
+1. **BigQuery ADK Toolset Import Error**
    ```bash
+   # Ensure google-adk package is installed with BigQuery support
+   pip install google-adk[bigquery]
+   
+   # Verify authentication
    gcloud auth application-default login
    gcloud config set project YOUR_PROJECT_ID
    ```
 
-2. **BigQuery Tools Import Error**
+2. **BigQuery Permission Denied**
    ```bash
-   # This is normal - the agent falls back to dummy data
-   # Enable BigQuery: USE_BIGQUERY=true in .env
-   # Run setup: ./setup.sh
+   # Ensure your account has BigQuery permissions
+   # Required roles: BigQuery Data Editor, BigQuery Job User
+   gcloud projects add-iam-policy-binding YOUR_PROJECT_ID \
+     --member="user:your-email@domain.com" \
+     --role="roles/bigquery.dataEditor"
+   ```
+
+3. **Async Compatibility Issues**
+   ```bash
+   # This should be resolved with the ADK toolset integration
+   # If you encounter async errors, run the integration test:
+   python test_bigquery_integration.py
    ```
 
 ### Debug Mode

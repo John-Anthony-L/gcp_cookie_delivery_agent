@@ -5,19 +5,19 @@ This document provides **deep technical implementation details** for integrating
 ## Current Implementation Status
 
 ### Completed Integrations
+- **BigQuery ADK Integration**: Full Google first-party ADK BigQuery toolset implementation with Application Default Credentials
 - **Calendar MCP Server**: Full Google Calendar API integration with OAuth2 authentication
-- **Agent Sequential Workflow**: Complete multi-agent orchestration with state management
+- **Agent Sequential Workflow**: Complete multi-agent orchestration with state management and BigQuery toolset
+- **Async Compatibility**: Resolved async conflicts for seamless ADK web interface usage
 - **Error Handling & Fallbacks**: Graceful degradation to dummy data when services unavailable
-- **Environment Configuration**: Comprehensive .env management with feature flags
 
 ### Partial Implementations
-- **BigQuery Integration**: Database schema and tools ready, needs activation
 - **Gmail MCP Server**: Basic structure exists, needs completion like calendar implementation
 
 ### Next Development Priorities
 1. Complete Gmail MCP server following calendar pattern
-2. Enable and test BigQuery integration
-3. Production hardening and monitoring
+2. Production hardening and monitoring
+3. Extended BigQuery analytics using ask_data_insights tool
 
 ## Calendar MCP Implementation Deep Dive
 
@@ -96,66 +96,107 @@ def schedule_delivery(tool_context: ToolContext, date: str, order_number: str, l
         return dummy_schedule_delivery(date, order_number, location, time_preference)
 ```
 
-## BigQuery Integration Architecture
+## BigQuery ADK Toolset Implementation Deep Dive
 
-### Current State: Structure Ready, Needs Activation
+### Architecture Pattern: Google's First-Party ADK Integration
 
-The BigQuery integration is **structurally complete** but not yet activated. Here's the implementation:
+The BigQuery integration uses Google's official ADK toolset for production-ready data access:
 
 ```python
-# bigquery-utils/bigquery_tools.py (implemented)
-async def get_latest_order_from_bigquery(tool_context: ToolContext) -> dict:
-    """Fetches most recent order with 'order_placed' status"""
+# bigquery_utils/bigquery_tools.py
+from google.adk.tools.bigquery import BigQueryCredentialsConfig, BigQueryToolset
+from google.adk.tools.bigquery.config import BigQueryToolConfig, WriteMode
+import google.auth
+
+def get_bigquery_toolset() -> BigQueryToolset:
+    """Create and configure the ADK BigQuery toolset."""
+    # Tool configuration with write permissions
+    tool_config = BigQueryToolConfig(write_mode=WriteMode.ALLOWED)
     
-async def update_order_status_in_bigquery(tool_context: ToolContext, order_number: str, new_status: str) -> dict:
-    """Updates order status to 'scheduled', 'delivered', etc."""
-
-# Agent integration pattern (ready)
-def get_latest_order(tool_context: ToolContext) -> dict:
-    if use_bigquery and BIGQUERY_AVAILABLE:
-        return asyncio.run(get_latest_order_from_bigquery(tool_context))
-    else:
-        # Fallback to dummy data (currently active)
-        return get_dummy_order_data()
+    # Use Application Default Credentials for authentication
+    application_default_credentials, _ = google.auth.default()
+    
+    # Create credentials configuration
+    credentials_config = BigQueryCredentialsConfig(
+        credentials=application_default_credentials
+    )
+    
+    # Initialize the BigQuery toolset
+    bigquery_toolset = BigQueryToolset(
+        credentials_config=credentials_config,
+        bigquery_tool_config=tool_config
+    )
+    
+    return bigquery_toolset
 ```
 
-### Database Schema (Implemented)
-```sql
-CREATE TABLE `{PROJECT_ID}.cookie_delivery.orders` (
-  order_id STRING NOT NULL,
-  order_number STRING NOT NULL,
-  customer_email STRING NOT NULL,
-  customer_name STRING NOT NULL,
-  customer_phone STRING,
-  order_items ARRAY<STRUCT<
-    item_name STRING,
-    quantity INT64,
-    unit_price FLOAT64
-  >>,
-  delivery_address STRUCT<
-    street STRING,
-    city STRING,
-    state STRING,
-    zip_code STRING,
-    country STRING
-  >,
-  delivery_location STRING,
-  delivery_request_date DATE,
-  delivery_time_preference STRING,
-  order_status STRING NOT NULL,
-  total_amount FLOAT64,
-  order_date TIMESTAMP,
-  special_instructions STRING,
-  created_at TIMESTAMP,
-  updated_at TIMESTAMP
-);
+### Available BigQuery ADK Tools
+- **list_dataset_ids**: List all available datasets in the project
+- **get_dataset_info**: Get detailed information about a specific dataset
+- **list_table_ids**: List all tables within a dataset
+- **get_table_info**: Get schema and metadata for a specific table
+- **execute_sql**: Execute SQL queries against BigQuery
+- **ask_data_insights**: Get AI-powered insights about your data
+
+### Authentication Flow
+```python
+# Application Default Credentials (ADC) - Production Ready
+# Authentication handled automatically via:
+# 1. gcloud auth application-default login (local development)
+# 2. Service Account (production deployment)
+# 3. Compute Engine/GKE metadata service (cloud deployment)
+
+application_default_credentials, project = google.auth.default()
 ```
 
-### Activation Steps
-1. **Set Environment Variables**: `USE_BIGQUERY=true` in `.env`
-2. **Run Setup Script**: `./setup.sh` to create dataset and tables
-3. **Test Connection**: `python bigquery-utils/test_bigquery.py`
-4. **Add Sample Data**: Insert test orders for validation
+### Agent Integration Pattern
+```python
+# agents.py - Modern ADK agent implementation
+from google.adk import Agent
+from bigquery_utils.bigquery_tools import get_bigquery_toolset
+
+def store_database_agent():
+    """Agent for managing store inventory and customer data in BigQuery."""
+    bigquery_toolset = get_bigquery_toolset()
+    
+    agent = Agent(
+        name="store_database_agent",
+        model="gemini-2.0-flash-exp",
+        description="Manages store inventory and customer data using BigQuery ADK toolset",
+        instruction="""You can query BigQuery databases for order management, 
+        inventory tracking, and customer service using the ADK toolset.""",
+        tools=[bigquery_toolset]
+    )
+    
+    return agent
+```
+
+### WriteMode Configuration
+- **WriteMode.BLOCKED**: Read-only access to BigQuery data
+- **WriteMode.ALLOWED**: Full read/write access for order management
+- **WriteMode.PROTECTED**: Temporary data access only
+
+## Legacy BigQuery Integration (Deprecated)
+
+### Previous Implementation Issues (Resolved)
+The previous BigQuery implementation had async compatibility issues with the ADK web interface:
+
+```python
+# OLD APPROACH (deprecated) - Caused async conflicts
+async def get_latest_order_from_bigquery(tool_context: ToolContext) -> dict:
+    """This async pattern caused 'asyncio.run() cannot be called from a running event loop'"""
+    # ... async BigQuery client operations
+```
+
+### Migration to ADK Toolset (Completed)
+The new implementation removes all async patterns and uses the synchronous ADK toolset:
+
+```python
+# NEW APPROACH (current) - ADK toolset integration
+def get_bigquery_toolset() -> BigQueryToolset:
+    """Synchronous toolset initialization compatible with ADK web interface"""
+    # ... ADK toolset configuration
+```
 
 ## Gmail MCP Implementation Roadmap
 
@@ -320,12 +361,16 @@ async def check_mcp_health(server_name: str):
 
 ## Production Implementation Roadmap
 
-### Phase 1: Complete Current Implementations (Mostly Done)
+### Phase 1: Production Ready (Completed)
+- **BigQuery ADK Toolset**: Full implementation with Application Default Credentials
 - **Calendar MCP**: Fully functional Google Calendar integration
 - **Agent Workflow**: Sequential processing with state management
 - **Error Handling**: Graceful fallbacks and comprehensive logging
-- **BigQuery**: Enable `USE_BIGQUERY=true` and test
+- **Async Compatibility**: Resolved for ADK web interface usage
+
+### Phase 2: Extended Features (In Progress)
 - **Gmail MCP**: Complete following calendar pattern
+- **Advanced Analytics**: Leverage ask_data_insights for business intelligence
 
 ### Phase 2: Production Hardening
 ```python
