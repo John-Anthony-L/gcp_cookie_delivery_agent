@@ -76,9 +76,9 @@ Expected output:
 ```
 BigQuery ADK Test Suite Runner
 =====================================
-Unit Tests: ✅ PASSED (14/14 tests, 100.0% success rate)
-Integration Tests: ✅ PASSED (9/9 tests, 100.0% success rate)
-🎉 ALL TESTS PASSED! BigQuery ADK integration is working correctly.
+Unit Tests: PASSED (14/14 tests, 100.0% success rate)
+Integration Tests: PASSED (9/9 tests, 100.0% success rate)
+ALL TESTS PASSED! BigQuery ADK integration is working correctly.
 Test Quality: EXCELLENT
 ```
 
@@ -87,17 +87,17 @@ Test Quality: EXCELLENT
 Our testing approach is specifically designed for first-party Google ADK integration:
 
 ### What We Test (Application Logic)
-✅ **Tool Configuration**: ADK toolset initialization and setup
-✅ **Query Generation**: SQL query building for business operations  
-✅ **Parameter Validation**: Input validation and error handling
-✅ **Agent Integration**: How tools integrate with ADK agent framework
-✅ **Mock Workflows**: Business process simulations
+**Tool Configuration**: ADK toolset initialization and setup
+**Query Generation**: SQL query building for business operations  
+**Parameter Validation**: Input validation and error handling
+**Agent Integration**: How tools integrate with ADK agent framework
+**Mock Workflows**: Business process simulations
 
 ### What We DON'T Test (ADK Responsibility)
-❌ BigQuery connection logic (ADK manages)
-❌ Authentication mechanisms (Google Cloud SDK handles)
-❌ Query execution engine (BigQuery service)  
-❌ Retry logic and backoff (ADK implements)
+BigQuery connection logic (ADK manages)
+Authentication mechanisms (Google Cloud SDK handles)
+Query execution engine (BigQuery service)  
+Retry logic and backoff (ADK implements)
 
 ### Test Categories
 
