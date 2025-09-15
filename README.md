@@ -1,6 +1,6 @@
 # Cookie Delivery Agent System
 
-A sophisticated multi-agent system built with Google ADK that automates cookie delivery order processing, scheduling, and customer communication. The system integrates with BigQuery for order management, Google Calendar for delivery scheduling, and Gmail for customer notifications.
+A multi-agent system built with Google ADK that automates cookie delivery order processing, scheduling, and customer communication. The system integrates with BigQuery for order management, Google Calendar for delivery scheduling, and Gmail for customer notifications.
 
 ## Architecture Overview
 
@@ -12,21 +12,21 @@ A sophisticated multi-agent system built with Google ADK that automates cookie d
                                                          ▼
 ┌─────────────────┐    ┌──────────────────┐    ┌─────────────────┐
 │ Database Agent  │    │  Calendar Agent  │    │   Email Agent   │
-│   (BigQuery)    │    │   (MCP Server)   │    │  (MCP Server)   │
+│ (BigQuery ADK)  │    │    MCP Server    │    │ (LangChain)     │
 └─────────────────┘    └──────────────────┘    └─────────────────┘
          │                       │                       │
          ▼                       ▼                       ▼
 ┌─────────────────┐    ┌──────────────────┐    ┌─────────────────┐
 │    BigQuery     │    │ Google Calendar  │    │     Gmail       │
-│   (Direct)      │    │  (Business Acct) │    │ (Business Acct) │
+│  (ADK Toolset)  │    │  (Business Acct) │    │ (LangChain API) │
 └─────────────────┘    └──────────────────┘    └─────────────────┘
 ```
 
 ### Agent Workflow
 
-1. **Database Agent**: Fetches new orders from BigQuery with status "order_placed"
-2. **Calendar Agent**: Checks availability and schedules delivery appointments
-3. **Email Agent**: Generates personalized confirmation emails with haikus and updates order status
+1. **Database Agent**: Fetches new orders from BigQuery using Google's first-party ADK toolset with status "order_placed"
+2. **Calendar Agent**: Checks availability and schedules delivery appointments via MCP server
+3. **Email Agent**: Generates personalized confirmation emails using LangChain Community Gmail toolkit and updates order status in BigQuery
 
 ## Quick Start
 
@@ -57,18 +57,53 @@ gcloud auth application-default login
 gcloud config set project YOUR_PROJECT_ID
 ```
 
-4. **Initialize BigQuery Database**
-```python
-from bigquery_tools import BigQueryOrderManager
+4. **Calendar MCP Setup**
+```bash
+# Navigate to calendar MCP directory
+cd mcp-servers/calendar/
 
-manager = BigQueryOrderManager()
-manager.ensure_dataset_exists()
-manager.create_orders_table()
+# Set up OAuth2 credentials:
+# 1. Go to Google Cloud Console
+# 2. Enable Calendar API
+# 3. Create OAuth 2.0 Client ID (Desktop Application)
+# 4. Download and save as calendar_credentials.json in this directory
+
+# Test the calendar MCP
+python test_calendar_functions.py
 ```
 
-5. **Run the Agent System**
+5. **Enable Calendar MCP Integration**
 ```bash
-python agent.py
+# Edit .env file and set:
+USE_CALENDAR_MCP=true
+BUSINESS_CALENDAR_ID=primary  # or your specific calendar ID
+```
+
+6. **BigQuery Setup**
+```bash
+# BigQuery integration uses Google's first-party ADK toolset
+# Authentication is handled via Application Default Credentials
+
+# Set up Google Cloud authentication
+gcloud auth application-default login
+gcloud config set project YOUR_PROJECT_ID
+
+# Enable BigQuery Integration
+# Edit .env file and set:
+USE_BIGQUERY=true
+
+# Optional: Run BigQuery environment setup for sample data
+python bigquery-utils/create_bigquery_environment.py
+```
+
+7. **Run the Agent System**
+```bash
+# The system will automatically:
+# - Use real Google Calendar if MCP configured
+# - Use real Gmail if LangChain configured
+# - Fall back to dummy data for missing services
+
+adk web
 ```
 
 ## Environment Setup
@@ -88,25 +123,40 @@ GOOGLE_CLOUD_PROJECT=your-gcp-project-id
 MODEL=gemini-2.5-flash
 
 # =============================================================================
-# BUSINESS ACCOUNT CONFIGURATION (for MCP servers)
+# GMAIL LANGCHAIN INTEGRATION
 # =============================================================================
+# Set to 'true' to use real Gmail via LangChain Community toolkit
+USE_GMAIL_LANGCHAIN=true
+
 # Business email address for sending customer communications
 BUSINESS_EMAIL=deliveries@yourbusiness.com
+
+# =============================================================================
+# CALENDAR MCP INTEGRATION
+# =============================================================================
+# Set to 'true' to use real Google Calendar via MCP server
+USE_CALENDAR_MCP=true
 
 # Google Calendar ID for delivery scheduling
 # Use 'primary' for the main calendar or a specific calendar ID
 BUSINESS_CALENDAR_ID=primary
 
 # =============================================================================
-# MCP SERVER CONFIGURATION (Optional - for remote servers)
+# BIGQUERY ADK INTEGRATION
 # =============================================================================
-# If running MCP servers remotely, specify their endpoints
-# Leave as 'stdio' if running locally
-CALENDAR_MCP_URL=stdio
-GMAIL_MCP_URL=stdio
+# Set to 'true' to use Google's first-party ADK BigQuery toolset
+# Set to 'false' to use dummy data for development/testing
+USE_BIGQUERY=true
 
 # =============================================================================
-# DEVELOPMENT/TESTING (Optional)
+# BUSINESS ACCOUNT CONFIGURATION
+# =============================================================================
+# Additional business configuration for enhanced features
+# Business phone number for delivery coordination
+BUSINESS_PHONE=+1-555-0199
+
+# =============================================================================
+# DEVELOPMENT/TESTING
 # =============================================================================
 # Set to 'development' to use dummy data instead of real services
 ENVIRONMENT=production
@@ -115,22 +165,60 @@ ENVIRONMENT=production
 LOG_LEVEL=INFO
 ```
 
-### OAuth2 Credentials Setup
+### Gmail LangChain Integration Setup
 
-For the MCP servers to access Google Calendar and Gmail APIs, you'll need OAuth2 credentials:
+The Gmail integration uses **LangChain Community Gmail toolkit** for complete Gmail API functionality. Here's what's available:
 
-1. **Go to [Google Cloud Console](https://console.cloud.google.com/)**
-2. **Enable APIs**: Calendar API and Gmail API
-3. **Create Credentials**: OAuth 2.0 Client ID (Desktop Application)
-4. **Download JSON**: Save as `calendar_credentials.json` and `gmail_credentials.json`
-5. **Place in Directory**: Put credential files in `cookie-scheduler-agent/`
+#### Features:
+- Gmail API authentication via OAuth2 with automatic token refresh
+- Email sending with HTML and plain text support
+- Message search with powerful Gmail query syntax
+- Message retrieval and thread management
+- Graceful fallback to dummy data when not configured
+- Comprehensive error handling and logging
 
+#### Setup Steps:
+1. **Enable Gmail API** in Google Cloud Console
+2. **Install LangChain Community**: `pip install langchain-community`
+3. **Create OAuth2 Credentials** (Desktop Application)
+4. **Save credentials** as `gmail_langchain/gmail_credentials.json`
+5. **Test the integration**: `python gmail_langchain/test_gmail_integration.py`
+
+#### File Structure:
 ```
-cookie-scheduler-agent/
-├── .env
-├── calendar_credentials.json  # OAuth2 for Calendar MCP
-├── gmail_credentials.json     # OAuth2 for Gmail MCP
-└── ...
+gmail_langchain/
+├── gmail_manager.py             # Main LangChain Gmail manager class
+├── email_utils.py               # Utility functions for agent integration
+├── test_gmail_integration.py    # Test script
+├── gmail_credentials.json       # Your OAuth2 credentials
+├── gmail_token.json             # Auto-generated tokens
+└── README.md                    # Setup documentation
+```
+
+### Calendar MCP Server Setup
+
+The Calendar MCP server provides Google Calendar integration with the following features:
+
+#### Features:
+- Google Calendar API authentication via OAuth2
+- Event creation, reading, and availability checking
+- RFC3339 datetime formatting for Google Calendar
+- Automatic fallback to dummy data if unavailable
+- Comprehensive error handling and logging
+
+#### Setup Steps:
+1. **Enable Calendar API** in Google Cloud Console
+2. **Create OAuth2 Credentials** (Desktop Application)
+3. **Save credentials** as `mcp-servers/calendar/calendar_credentials.json`
+4. **Test the integration**: `python mcp-servers/calendar/test_calendar_functions.py`
+
+#### File Structure:
+```
+mcp-servers/calendar/
+├── calendar_mcp_server.py       # Main MCP server (CalendarManager class)
+├── calendar_credentials.json    # Your OAuth2 credentials
+├── calendar_token.json          # Auto-generated tokens
+└── test_calendar_functions.py   # Test script
 ```
 
 ## BigQuery Schema
@@ -197,23 +285,25 @@ INSERT INTO `{PROJECT_ID}.cookie_delivery.orders` VALUES (
 );
 ```
 
-## MCP Server Setup
+## MCP Server and LangChain Integration Setup
 
-The system uses Model Context Protocol (MCP) servers for Gmail and Calendar integration with your business accounts.
+The system uses both Model Context Protocol (MCP) servers and LangChain Community tools for external service integration.
 
-### Running MCP Servers
+### Running Services
 
 **Calendar MCP Server:**
 ```bash
 python calendar_mcp_server.py
 ```
 
-**Gmail MCP Server:**
+**Gmail LangChain Integration:**
 ```bash
-python gmail_mcp_server.py
+# Gmail runs directly within the agent using LangChain Community toolkit
+# No separate server needed - OAuth2 authentication handled automatically
+python gmail_langchain/test_gmail_integration.py  # Test integration
 ```
 
-### MCP Server Features
+### Integration Features
 
 #### Calendar MCP Server
 - `get_events`: Fetch delivery schedule
@@ -221,31 +311,50 @@ python gmail_mcp_server.py
 - `check_availability`: Verify time slot availability
 - `update_event`: Modify existing appointments
 
-#### Gmail MCP Server
-- `send_email`: Send customer confirmation emails
-- `get_message_status`: Track email delivery status
+#### Gmail LangChain Integration
+- `send_email`: Send customer confirmation emails with HTML formatting
+- `search_messages`: Search Gmail with powerful query syntax
+- `get_message`: Retrieve specific emails and thread details
+- `oauth2_authentication`: Automatic token refresh and credential management
 
-## Agent Components
+## Current Implementation
 
-### 1. Database Agent (`store_database_agent`)
-- **Purpose**: Manages order data in BigQuery
-- **Tools**: `get_latest_order`, `update_order_status`
-- **Integration**: Direct BigQuery connection
+### BigQuery ADK Integration
+- **Google's First-Party ADK Toolset**: Uses official BigQuery ADK integration
+- **Application Default Credentials**: Secure authentication via ADC
+- **WriteMode Configuration**: Proper data access control (BLOCKED, ALLOWED, PROTECTED)
+- **Async Compatibility**: Resolved async conflicts for ADK web interface usage
+- **Available Tools**: list_dataset_ids, get_dataset_info, list_table_ids, get_table_info, execute_sql, ask_data_insights
 
-### 2. Calendar Agent (`calendar_agent`)
-- **Purpose**: Handles delivery scheduling
-- **Tools**: `get_delivery_schedule`, `schedule_delivery`, `save_delivery_month`
-- **Integration**: Google Calendar via MCP server
+### Gmail LangChain Integration
+- **LangChain Community Gmail Toolkit**: Uses official LangChain integration for Gmail API
+- **OAuth2 Authentication**: Secure authentication with automatic token refresh
+- **HTML Email Support**: Rich formatting for professional customer communications
+- **Message Search & Retrieval**: Full Gmail query capabilities for business operations
+- **Graceful Fallback**: Uses dummy data when Gmail not configured
 
-### 3. Email Agent (`email_agent`)
-- **Purpose**: Customer communication and order finalization
-- **Tools**: `send_confirmation_email`, `update_order_status`
-- **Sub-Agents**: `haiku_writer_agent` (generates personalized haikus)
-- **Integration**: Gmail via MCP server
+### Calendar Agent with Real Google Calendar
+- **Real Google Calendar Integration**: Creates actual calendar events via MCP server
+- **Smart Fallback**: Uses dummy data when Calendar MCP unavailable
+- **Business Calendar Support**: Configurable calendar ID for business account
+- **RFC3339 Datetime**: Proper timezone handling for Google Calendar API
 
-### 4. Haiku Writer Sub-Agent (`haiku_writer_agent`)
-- **Purpose**: Creative content generation
-- **Capability**: Generates seasonal haikus based on delivery month and cookie types
+### Agent Workflow (Sequential Processing)
+1. **Database Agent**: Fetches orders using BigQuery ADK toolset with production-ready data access
+2. **Calendar Agent**: Real Google Calendar scheduling via MCP server
+3. **Email Agent**: Professional email communications via LangChain Gmail toolkit with BigQuery integration for order updates
+4. **Haiku Writer Sub-Agent**: Generates creative seasonal content
+
+### Error Handling & Resilience
+- **Graceful Degradation**: Falls back to dummy data when services unavailable
+- **Comprehensive Logging**: Detailed operation tracking and error reporting
+- **Authentication Recovery**: Handles OAuth2 token refresh automatically for both Calendar and Gmail
+- **Service Availability Checks**: Smart detection of configured vs. fallback services
+
+### Next Steps
+1. **Production Hardening**: Add monitoring and alerting
+2. **Extended BigQuery Analytics**: Leverage ask_data_insights for business intelligence
+3. **Email Templates**: Enhanced HTML email templates for different order types
 
 ## Workflow Process
 
@@ -256,48 +365,130 @@ python gmail_mcp_server.py
 5. **Customer Notification**: Email agent sends confirmation with delivery details and haiku
 6. **Status Update**: Order status updated to "scheduled" in BigQuery
 
-## Testing
+## Testing & Validation
 
-### Development Mode
-
-Set `ENVIRONMENT=development` in `.env` to use dummy data instead of real services:
+### BigQuery ADK Testing
+The system includes a comprehensive test suite for the BigQuery ADK integration:
 
 ```bash
-# In .env file
-ENVIRONMENT=development
+# Unit Tests - Test application logic and SQL query generation
+cd cookie-scheduler-agent/bigquery_utils/
+python test_adk_bigquery_unit.py
+
+# Integration Tests - Test ADK toolset integration patterns
+python test_adk_integration.py
+
+# Run All Tests - Comprehensive test suite runner
+python run_all_tests.py
 ```
 
-### Test Commands
+**Test Coverage:**
+-  ADK toolset initialization and configuration
+-  SQL query generation logic for business operations
+-  Parameter validation and error handling
+-  Mock agent workflow integration
+-  Authentication and credential management
+-  Performance and scaling characteristics
 
+**Expected Test Results:**
+```
+BigQuery ADK Test Suite Runner
+=====================================
+Unit Tests (test_adk_bigquery_unit.py): PASSED
+  Total: 14
+  Passed: 14
+  Success Rate: 100.0%
+
+Integration Tests (test_adk_integration.py): PASSED
+  Total: 9
+  Passed: 9
+  Success Rate: 100.0%
+
+🎉 ALL TESTS PASSED! BigQuery ADK integration is working correctly.
+Test Quality: EXCELLENT
+```
+
+### Calendar MCP Testing
 ```bash
-# Test BigQuery connection
-python -c "from bigquery_tools import BigQueryOrderManager; mgr = BigQueryOrderManager(); print('BigQuery connected!')"
+# Test real Google Calendar integration
+cd mcp-servers/calendar/
+python test_calendar_functions.py
 
-# Test MCP servers
-python calendar_mcp_server.py &
-python gmail_mcp_server.py &
+# Expected output:
+# Calendar MCP: Successfully connected to Google Calendar
+# Calendar events retrieved successfully
+# Event creation and availability checking working
+```
 
-# Run agent workflow
+### Agent Integration Testing
+```bash
+# Test agent with real calendar integration
 python agent.py
+
+# The agent will:
+# 1. Import CalendarManager successfully
+# 2. Use real Google Calendar if configured
+# 3. Fall back to dummy data gracefully
+# 4. Process sequential workflow
 ```
+
+### Testing Architecture
+
+The testing strategy follows best practices for first-party ADK integration:
+
+**What We Test (Application Logic):**
+-  Tool configuration and initialization
+-  SQL query generation logic
+-  Parameter validation and input handling
+-  Agent integration patterns
+-  Error handling for application-specific scenarios
+-  Mock workflow simulations
+
+**What We DON'T Test (ADK Handles):**
+- BigQuery connection logic (ADK manages this)
+- Authentication mechanisms (Google Cloud SDK handles this)
+- Query execution engine (BigQuery service responsibility)
+- Retry logic and backoff strategies (ADK implements this)
+
+For detailed testing documentation, see `cookie-scheduler-agent/bigquery_utils/TESTING_STRATEGY.md`.
 
 ## File Structure
 
 ```
 cookie-scheduler-agent/
-├── agent.py                    # Main agent definitions and workflow
-├── bigquery_tools.py          # BigQuery integration functions
-├── calendar_mcp_server.py     # Google Calendar MCP server
-├── gmail_mcp_server.py        # Gmail MCP server
+├── agent.py                    # main adk agent orchestration
+├── dummy_data.py              # Fallback data for testing
 ├── requirements.txt           # Python dependencies
-├── README.md                  # This file
-├── INTEGRATION_GUIDE.md       # Detailed implementation guide
 ├── .env.example              # Example environment configuration
 ├── .env                      # Your environment configuration (create this)
-├── calendar_credentials.json # OAuth2 credentials for Calendar (you create)
-├── gmail_credentials.json    # OAuth2 credentials for Gmail (you create)
-├── calendar_token.json       # Auto-generated OAuth2 tokens
-└── gmail_token.json          # Auto-generated OAuth2 tokens
+│
+├── gmail_langchain/
+│   ├── gmail_manager.py             # Main LangChain Gmail manager class
+│   ├── email_utils.py               # Utility functions for agent integration
+│   ├── test_gmail_integration.py    # Test script
+│   ├── gmail_credentials.json       # Your OAuth2 credentials
+│   ├── gmail_token.json             # Auto-generated tokens
+│   └── README.md                    # Setup documentation
+│
+├── bigquery_utils/           # BigQuery ADK toolset integration
+│   ├── bigquery_tools.py     # ADK BigQuery toolset implementation
+│   ├── create_bigquery_environment.py # BigQuery setup script
+│   ├── test_adk_bigquery_unit.py      # Comprehensive unit tests
+│   ├── test_adk_integration.py        # Integration tests with ADK
+│   ├── run_all_tests.py               # Test suite runner
+│   ├── TESTING_STRATEGY.md            # Testing documentation
+│   ├── CLEANUP_SUMMARY.md             # Legacy code cleanup notes
+│   ├── BIGQUERY_SETUP.md              # ADK setup guide
+│   └── README.md                      # Directory documentation
+│
+├── mcp-servers/              # MCP Server implementations
+│   ├── calendar/             # Calendar MCP
+│   │   ├── calendar_mcp_server.py      # Complete CalendarManager class
+│   │   ├── calendar_credentials.json   # OAuth2 credentials (you create)
+│   │   ├── calendar_token.json         # Auto-generated tokens
+│   │   └── test_calendar_functions.py  # Test script for validation
+│   ├── start_calendar_mcp.py           # MCP server startup script
+│   └── setup_calendar_credentials.md   # Setup instructions
 ```
 
 ## Security Notes
@@ -319,28 +510,66 @@ cookie-scheduler-agent/
 
 ## Troubleshooting
 
-### Common Issues
+### Calendar MCP Issues (Most Common)
 
-1. **BigQuery Permission Denied**
+1. **Import Error: "calendar_mcp_server could not be resolved"**
    ```bash
+   # Solution: This is an IDE issue, the code works at runtime
+   # The agent uses try/catch for graceful fallback
+   # Verify it works: python mcp-servers/calendar/test_calendar_functions.py
+   ```
+
+2. **OAuth2 Authentication Failed**
+   ```bash
+   # 1. Ensure Calendar API is enabled in Google Cloud Console
+   # 2. Create OAuth 2.0 Client ID (Desktop Application)  
+   # 3. Download and save as mcp-servers/calendar/calendar_credentials.json
+   # 4. Delete calendar_token.json to force re-authentication
+   ```
+
+3. **Calendar Events Not Appearing**
+   ```bash
+   # Check your calendar ID in .env:
+   BUSINESS_CALENDAR_ID=primary  # or specific calendar ID
+   # Verify permissions on the target calendar
+   ```
+
+4. **Permissions Error**
+   ```bash
+   # 1. Ensure Calendar API is enabled in Google Cloud Console
+   # 2. Navigate to: "APIs & Services" → "OAuth consent screen"
+   # 3. User Type: Make sure you selected "External" (not Internal)
+   # 4. Test users: Add your personal Gmail account as a test user
+   ```
+
+
+### BigQuery ADK Issues
+
+1. **BigQuery ADK Toolset Import Error**
+   ```bash
+   # Ensure google-adk package is installed with BigQuery support
+   pip install google-adk[bigquery]
+   
+   # Verify authentication
    gcloud auth application-default login
    gcloud config set project YOUR_PROJECT_ID
    ```
 
-2. **OAuth2 Authentication Failed**
-   - Ensure credential JSON files are in the correct directory
-   - Check that Calendar and Gmail APIs are enabled in Google Cloud Console
-   - Verify business account has proper permissions
+2. **BigQuery Permission Denied**
+   ```bash
+   # Ensure your account has BigQuery permissions
+   # Required roles: BigQuery Data Editor, BigQuery Job User
+   gcloud projects add-iam-policy-binding YOUR_PROJECT_ID \
+     --member="user:your-email@domain.com" \
+     --role="roles/bigquery.dataEditor"
+   ```
 
-3. **MCP Server Connection Issues**
-   - Check that MCP servers are running
-   - Verify `stdio` configuration in environment variables
-   - Check firewall settings if using remote MCP servers
-
-4. **Agent Execution Errors**
-   - Check `.env` file configuration
-   - Verify all dependencies are installed
-   - Check Google Cloud authentication status
+3. **Async Compatibility Issues**
+   ```bash
+   # This should be resolved with the ADK toolset integration
+   # If you encounter async errors, run the integration test:
+   python test_bigquery_integration.py
+   ```
 
 ### Debug Mode
 
@@ -383,4 +612,4 @@ For issues and questions:
 
 ---
 
-**Note**: This system is designed for production use with real business accounts. Always test thoroughly in a development environment before deploying to production.
+**Note**: This system demonstrates production-ready integration patterns with Google Cloud services. Always test thoroughly in a development environment before deploying to production.
