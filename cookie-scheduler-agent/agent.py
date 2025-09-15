@@ -39,7 +39,7 @@ try:
     # Initialize the ADK BigQuery toolset
     bigquery_toolset = get_bigquery_toolset()
     BIGQUERY_AVAILABLE = bigquery_toolset is not None
-    logging.info(f"ADK BigQuery Toolset: {'✅ Available' if BIGQUERY_AVAILABLE else '❌ Not available'}")
+    logging.info(f"ADK BigQuery Toolset: {'Available' if BIGQUERY_AVAILABLE else 'Not available'}")
 except ImportError as e:
     logging.warning(f"BigQuery ADK toolset not available: {e}")
     bigquery_toolset = None
@@ -98,7 +98,7 @@ def get_latest_order(tool_context: ToolContext) -> dict:
         # With ADK toolset, we return a structured query for the agent to execute
         query_info = get_latest_order_from_bigquery(tool_context)
         if query_info.get("status") == "query_ready":
-            logging.info("📝 BigQuery query prepared for ADK execution")
+            logging.info(" BigQuery query prepared for ADK execution")
             return {
                 "status": "bigquery_query_ready",
                 "instruction": "Use the execute_sql tool to run this query",
@@ -106,18 +106,18 @@ def get_latest_order(tool_context: ToolContext) -> dict:
                 "message": "Query prepared for BigQuery ADK toolset execution"
             }
         else:
-            logging.error(f"❌ Failed to prepare BigQuery query: {query_info.get('message')}")
+            logging.error(f" Failed to prepare BigQuery query: {query_info.get('message')}")
     
     # Fallback to dummy data
-    logging.info("📊 Using dummy data for order retrieval")
+    logging.info("Using dummy data for order retrieval")
     for order_id, order_details in DUMMY_ORDER_DATABASE.items():
         if order_details["order_status"] == "order_placed":
-            logging.info(f"✅ Found latest order: {order_id}")
+            logging.info(f" Found latest order: {order_id}")
             # Save relevant details to the agent's state
             tool_context.state['order_details'] = order_details
             return order_details
     
-    logging.warning("⚠️ No new orders found with status 'order_placed'.")
+    logging.warning(" No new orders found with status 'order_placed'.")
     return {"status": "error", "message": "No new orders found with status 'order_placed'."}
 
 def update_order_status(tool_context: ToolContext, order_number: str, new_status: str) -> dict:
@@ -125,13 +125,13 @@ def update_order_status(tool_context: ToolContext, order_number: str, new_status
     Updates the status of a given order in the database.
     Uses BigQuery ADK toolset if enabled, otherwise uses dummy data.
     """
-    logging.info(f"📝 Tool: update_order_status called for {order_number} to set status {new_status}.")
+    logging.info(f"Tool: update_order_status called for {order_number} to set status {new_status}.")
     
     # Use BigQuery ADK toolset if available and enabled
     if use_bigquery and BIGQUERY_AVAILABLE:
         query_info = update_order_status_in_bigquery(tool_context, order_number, new_status)
         if query_info.get("status") == "query_ready":
-            logging.info("📝 BigQuery update query prepared for ADK execution")
+            logging.info(" BigQuery update query prepared for ADK execution")
             return {
                 "status": "bigquery_update_ready",
                 "instruction": "Use the execute_sql tool to run this update query",
@@ -141,17 +141,17 @@ def update_order_status(tool_context: ToolContext, order_number: str, new_status
                 "message": f"Update query prepared to change order {order_number} to {new_status}"
             }
         else:
-            logging.error(f"❌ Failed to prepare update query: {query_info.get('message')}")
+            logging.error(f"Failed to prepare update query: {query_info.get('message')}")
     
     # Fallback to dummy data
-    logging.info("📊 Using dummy data for order status update")
+    logging.info("Using dummy data for order status update")
     for order_id, order_details in DUMMY_ORDER_DATABASE.items():
         if order_details.get("order_number") == order_number:
             DUMMY_ORDER_DATABASE[order_id]["order_status"] = new_status
-            logging.info(f"✅ Updated order {order_number} status to {new_status} (dummy data)")
+            logging.info(f"Updated order {order_number} status to {new_status} (dummy data)")
             return {"status": "success", "order_number": order_number, "new_status": new_status, "source": "dummy_data"}
     
-    logging.warning(f"⚠️ Order {order_number} not found.")
+    logging.warning(f"Order {order_number} not found.")
     return {"status": "error", "message": f"Order {order_number} not found."}
 
 def get_delivery_schedule(tool_context: ToolContext) -> dict:
@@ -541,7 +541,7 @@ store_database_agent_tools = [get_latest_order]
 # Add BigQuery ADK toolset if available
 if BIGQUERY_AVAILABLE and bigquery_toolset:
     store_database_agent_tools.append(bigquery_toolset)
-    logging.info("✅ Added BigQuery ADK toolset to store_database_agent")
+    logging.info("Added BigQuery ADK toolset to store_database_agent")
 
 store_database_agent = Agent(
     name="store_database_agent",
@@ -550,7 +550,7 @@ store_database_agent = Agent(
     instruction=f"""
     You are the order manager with access to the BigQuery orders database {'using Google\'s first-party ADK toolset' if BIGQUERY_AVAILABLE else '(using dummy data fallback)'}.
     
-    **BigQuery Integration Status**: {'✅ ADK BigQuery Toolset Available' if BIGQUERY_AVAILABLE else '⚠️ Using Dummy Data'}
+    **BigQuery Integration Status**: {'ADK BigQuery Toolset Available' if BIGQUERY_AVAILABLE else 'Using Dummy Data'}
     
     Your primary job is to fetch the latest order from the database that has the status 'order_placed'.
     
@@ -580,7 +580,7 @@ calendar_agent = Agent(
     You are the logistics coordinator with access to the business Google Calendar {'via MCP server' if use_calendar_mcp and CALENDAR_MCP_AVAILABLE else '(using dummy data)'}.
     Your task is to schedule the new cookie delivery.
 
-    **Calendar Integration Status**: {'✅ Real Google Calendar MCP Connected' if use_calendar_mcp and CALENDAR_MCP_AVAILABLE else '⚠️ Using Dummy Data (MCP not available)'}
+    **Calendar Integration Status**: {'Real Google Calendar MCP Connected' if use_calendar_mcp and CALENDAR_MCP_AVAILABLE else 'Using Dummy Data (MCP not available)'}
 
     1.  **Fetch Schedule**: Use the `get_delivery_schedule` tool to get the current calendar from the business account.
     2.  **Determine Delivery Month**: Use the `save_delivery_month` tool with the requested delivery date from the order details in state to find out the delivery month and save it for the next agent.
@@ -632,9 +632,9 @@ email_agent = Agent(
     You are the customer communication specialist with access to the business Gmail account {'and BigQuery ADK toolset' if BIGQUERY_AVAILABLE else '(using dummy data fallback)'}.
     
     **Integration Status**: 
-    - Gmail: {'✅ LangChain Available' if GMAIL_LANGCHAIN_AVAILABLE else '⚠️ Using Dummy Data'}
-    - BigQuery: {'✅ ADK Toolset Available' if BIGQUERY_AVAILABLE else '⚠️ Using Dummy Data'}
-    
+    - Gmail: {'LangChain Available' if GMAIL_LANGCHAIN_AVAILABLE else 'Using Dummy Data'}
+    - BigQuery: {'ADK Toolset Available' if BIGQUERY_AVAILABLE else 'Using Dummy Data'}
+
     Your multi-step task is to confirm the delivery and update the order status:
 
     1.  **Generate Haiku**: Delegate to your `haiku_writer_agent` to generate a haiku based on the delivery month and the order items from the state.
