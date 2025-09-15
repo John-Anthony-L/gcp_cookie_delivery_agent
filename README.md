@@ -459,11 +459,18 @@ cookie-scheduler-agent/
 ├── agent.py                    # Legacy agent definitions (see agents.py for modern implementation)
 ├── agents.py                   # Modern ADK agent definitions with BigQuery toolset
 ├── dummy_data.py              # Fallback data for testing
-├── gmail_mcp_server.py        # Gmail MCP server (basic implementation)
 ├── test_bigquery_integration.py # BigQuery ADK toolset integration tests
 ├── requirements.txt           # Python dependencies
 ├── .env.example              # Example environment configuration
 ├── .env                      # Your environment configuration (create this)
+│
+├── gmail_langchain/
+│   ├── gmail_manager.py             # Main LangChain Gmail manager class
+│   ├── email_utils.py               # Utility functions for agent integration
+│   ├── test_gmail_integration.py    # Test script
+│   ├── gmail_credentials.json       # Your OAuth2 credentials
+│   ├── gmail_token.json             # Auto-generated tokens
+│   └── README.md                    # Setup documentation
 │
 ├── bigquery_utils/           # BigQuery ADK toolset integration
 │   ├── bigquery_tools.py     # ADK BigQuery toolset implementation
