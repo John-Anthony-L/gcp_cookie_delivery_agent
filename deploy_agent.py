@@ -28,14 +28,6 @@ def deploy_cookie_agent():
 
         # Import the root agent from the cookie-scheduler-agent package
         from cookie_scheduler_agent.agent import root_agent
-
-        # Add the current directory to Python path for imports
-        # import sys
-        # current_dir = os.path.dirname(os.path.abspath(__file__))
-        # if current_dir not in sys.path:
-        #     sys.path.insert(0, current_dir)
-
-        # Import from the existing cookie_scheduler_agent folder
         
         logger.info("🍪 Starting deployment of Cookie Delivery Agent...")
         
@@ -125,13 +117,7 @@ def main():
         logger.info(f"Agent Resource ID: {deployed_agent.resource_name}")
         logger.info(f"Updating Agent Resource ID in .env file")
         # Update the .env file with the new Agent Resource ID
-        set_key("AGENT_RESOURCE_ID", deployed_agent.resource_name)
-
-        logger.info("\nNext steps:")
-        logger.info("1. Test the deployed agent using the Vertex AI console")
-        logger.info("2. Configure any additional permissions if needed")
-        logger.info("3. Monitor the agent's performance in production")
-        logger.info("4. Celebrate! We got it to work!")
+        set_key("cookie_scheduler_agent/.env", "AGENT_RESOURCE_ID", deployed_agent.resource_name)
         
         return True
         
