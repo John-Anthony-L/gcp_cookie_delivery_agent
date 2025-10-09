@@ -33,10 +33,10 @@ print_error() {
 check_environment() {
     print_status "Checking environment configuration..."
     
-    # Try to load from cookie-scheduler-agent/.env if it exists
-    if [ -f "cookie-scheduler-agent/.env" ]; then
-        print_status "Loading environment variables from cookie-scheduler-agent/.env file..."
-        export $(cat cookie-scheduler-agent/.env | grep -v '^#' | xargs)
+    # Try to load from cookie_scheduler_agent/.env if it exists
+    if [ -f "cookie_scheduler_agent/.env" ]; then
+        print_status "Loading environment variables from cookie_scheduler_agent/.env file..."
+        export $(cat cookie_scheduler_agent/.env | grep -v '^#' | xargs)
     elif [ -f ".env" ]; then
         print_status "Loading environment variables from .env file..."
         export $(cat .env | grep -v '^#' | xargs)
@@ -44,7 +44,7 @@ check_environment() {
     
     if [ -z "$GOOGLE_CLOUD_PROJECT" ]; then
         print_error "GOOGLE_CLOUD_PROJECT environment variable is not set"
-        print_status "Please set it in cookie-scheduler-agent/.env or run:"
+        print_status "Please set it in cookie_scheduler_agent/.env or run:"
         print_status "  export GOOGLE_CLOUD_PROJECT=your-project-id"
         exit 1
     fi
@@ -82,7 +82,13 @@ enable_apis() {
     
     gcloud services enable bigquery.googleapis.com
     gcloud services enable logging.googleapis.com
-    
+    gcloud services enable discoveryengine.googleapis.com
+    gcloud services enable dialogflow.googleapis.com
+    gcloud services enable aiplatform.googleapis.com
+    gcloud services enable cloudfunctions.googleapis.com
+    gcloud services enable cloudbuild.googleapis.com
+    gcloud services enable run.googleapis.com
+
     print_success "APIs enabled successfully"
 }
 
@@ -93,8 +99,8 @@ check_python_deps() {
     if ! python3 -c "import google.cloud.bigquery" 2>/dev/null; then
         print_error "google-cloud-bigquery is not installed"
         print_status "Installing Python dependencies..."
-        if [ -f "cookie-scheduler-agent/requirements.txt" ]; then
-            pip3 install -r cookie-scheduler-agent/requirements.txt
+        if [ -f "cookie_scheduler_agent/requirements.txt" ]; then
+            pip3 install -r cookie_scheduler_agent/requirements.txt
         elif [ -f "requirements.txt" ]; then
             pip3 install -r requirements.txt
         else
@@ -194,8 +200,8 @@ main() {
     print_success "BigQuery setup completed successfully!"
     echo
     print_status "Next steps:"
-    print_status "1. Edit cookie-scheduler-agent/.env and set USE_BIGQUERY=true"
-    print_status "2. Run the agent: cd cookie-scheduler-agent && python agent.py"
+    print_status "1. Edit cookie_scheduler_agent/.env and set USE_BIGQUERY=true"
+    print_status "2. Run the agent: cd cookie_scheduler_agent && python agent.py"
     echo
     print_status "To view your data in BigQuery, visit:"
     print_status "  https://console.cloud.google.com/bigquery?project=$GOOGLE_CLOUD_PROJECT"
@@ -204,3 +210,6 @@ main() {
 
 # Run the main function
 main "$@"
+
+
+

@@ -12,13 +12,13 @@ A multi-agent system built with Google ADK that automates cookie delivery order 
                                                          ▼
 ┌─────────────────┐    ┌──────────────────┐    ┌─────────────────┐
 │ Database Agent  │    │  Calendar Agent  │    │   Email Agent   │
-│ (BigQuery ADK)  │    │    MCP Server    │    │ (LangChain)     │
+│ (BigQuery ADK)  │    │    MCP Server    │    │ (LangChain API) │
 └─────────────────┘    └──────────────────┘    └─────────────────┘
          │                       │                       │
          ▼                       ▼                       ▼
 ┌─────────────────┐    ┌──────────────────┐    ┌─────────────────┐
 │    BigQuery     │    │ Google Calendar  │    │     Gmail       │
-│  (ADK Toolset)  │    │  (Business Acct) │    │ (LangChain API) │
+│   (GCP Acct)    │    │  (Business Acct) │    │ (Business Acct) │
 └─────────────────┘    └──────────────────┘    └─────────────────┘
 ```
 
@@ -28,87 +28,174 @@ A multi-agent system built with Google ADK that automates cookie delivery order 
 2. **Calendar Agent**: Checks availability and schedules delivery appointments via MCP server
 3. **Email Agent**: Generates personalized confirmation emails using LangChain Community Gmail toolkit and updates order status in BigQuery
 
-## Quick Start
+## Setup Instructions
 
-### Prerequisites
+> ** Important for Argolis Users**: If you're using an Argolis corporate account, Gmail and Calendar access are restricted due to Google security policies. You'll need to create or use a **free secondary Gmail account** for Calendar and Gmail integration. While you can use Outlook or other services, these instructions are designed around Google Workspace/Gmail.
 
+### 1. Get Code & Install
+
+**Prerequisites:**
 - Python 3.8+
 - Google Cloud Project with BigQuery enabled
-- Google Workspace account (for business calendar/email)
 - Google ADK installed
+- Secondary Gmail account (for Argolis users)
 
-### Installation
-
-1. **Clone and Install Dependencies**
+**Installation:**
 ```bash
-cd cookie-scheduler-agent
+cd cookie_scheduler_agent
 pip install -r requirements.txt
 ```
 
-2. **Set up Environment Variables**
+### 2. Configure Environment
+
 ```bash
 cp .env.example .env
-# Edit .env with your configuration (see Environment Setup below)
+# Edit .env with your configuration (details in Environment Setup section below)
 ```
 
-3. **Configure Google Cloud Authentication**
+### 3. Global Authentication
+
 ```bash
 gcloud auth application-default login
 gcloud config set project YOUR_PROJECT_ID
 ```
 
-4. **Calendar MCP Setup**
+### 4. Enable Calendar API
+
+> ** For Argolis Users**: Use your **secondary Gmail account** for this step, not your corporate Argolis account.
+
+1. Go to [Google Cloud Console](https://console.cloud.google.com)
+2. Navigate to "APIs & Services" → "Library"
+3. Search for "Google Calendar API"
+4. Click "Enable"
+5. Go to "APIs & Services" → "OAuth consent screen"
+6. Choose "External" user type (required for secondary accounts)
+7. Add your secondary Gmail account as a test user
+
+### 5. Enable Gmail API
+
+> ** For Argolis Users**: Use your **secondary Gmail account** for this step, not your corporate Argolis account.
+
+1. In Google Cloud Console, navigate to "APIs & Services" → "Library"
+2. Search for "Gmail API"
+3. Click "Enable"
+4. Ensure your secondary Gmail account is added as a test user in OAuth consent screen
+
+### 6. Enable BigQuery API
+
+1. In Google Cloud Console, navigate to "APIs & Services" → "Library"
+2. Search for "BigQuery API"
+3. Click "Enable"
+4. Verify your project has BigQuery permissions
+
+### 7. Set Up Calendar Credentials
+
+> ** For Argolis Users**: Create credentials using your **secondary Gmail account**, not your corporate account.
+
 ```bash
 # Navigate to calendar MCP directory
 cd mcp-servers/calendar/
 
-# Set up OAuth2 credentials:
-# 1. Go to Google Cloud Console
-# 2. Enable Calendar API
-# 3. Create OAuth 2.0 Client ID (Desktop Application)
-# 4. Download and save as calendar_credentials.json in this directory
+# Create OAuth 2.0 credentials:
+# 1. Go to Google Cloud Console → "APIs & Services" → "Credentials"
+# 2. Click "Create Credentials" → "OAuth 2.0 Client ID"
+# 3. Choose "Desktop Application"
+# 4. Download the JSON file and save as 'calendar_credentials.json' in this directory
+```
 
-# Test the calendar MCP
+### 8. Set Up Gmail Credentials
+
+> ** For Argolis Users**: Use the same **secondary Gmail account** credentials from the Calendar setup.
+
+```bash
+# Navigate to Gmail directory
+cd gmail_langchain/
+
+# Use the same OAuth 2.0 credentials from Calendar setup:
+# 1. Copy the credentials JSON file from calendar setup
+# 2. Save as 'gmail_credentials.json' in this directory
+# OR create new credentials following the same process as Calendar
+```
+
+### 9. Setup BigQuery Environment
+
+```bash
+# Enable BigQuery Integration in .env file:
+USE_BIGQUERY=true
+
+# Optional: Create sample data for testing
+python bigquery_utils/create_bigquery_environment.py
+```
+
+### 10. Run Calendar MCP
+
+```bash
+# Start the Calendar MCP server
+cd mcp-servers/calendar/
+python calendar_mcp_server.py
+
+# In a separate terminal, test the server
 python test_calendar_functions.py
 ```
 
-5. **Enable Calendar MCP Integration**
+### 11. Run Main Agent
+
 ```bash
-# Edit .env file and set:
-USE_CALENDAR_MCP=true
-BUSINESS_CALENDAR_ID=primary  # or your specific calendar ID
-```
+# From the main directory, start the agent system
+adk web
 
-6. **BigQuery Setup**
-```bash
-# BigQuery integration uses Google's first-party ADK toolset
-# Authentication is handled via Application Default Credentials
-
-# Set up Google Cloud authentication
-gcloud auth application-default login
-gcloud config set project YOUR_PROJECT_ID
-
-# Enable BigQuery Integration
-# Edit .env file and set:
-USE_BIGQUERY=true
-
-# Optional: Run BigQuery environment setup for sample data
-python bigquery-utils/create_bigquery_environment.py
-```
-
-7. **Run the Agent System**
-```bash
 # The system will automatically:
 # - Use real Google Calendar if MCP configured
-# - Use real Gmail if LangChain configured
+# - Use real Gmail if LangChain configured  
+# - Use BigQuery ADK toolset for data management
 # - Fall back to dummy data for missing services
+```
 
-adk web
+### 12. Validate Calendar MCP
+
+```bash
+cd mcp-servers/calendar/
+python test_calendar_functions.py
+
+# Expected output:
+# Calendar MCP: Successfully connected to Google Calendar
+# Calendar events retrieved successfully
+# Event creation and availability checking working
+```
+
+### 13. Validate BigQuery ADK
+
+```bash
+cd bigquery_utils/
+python test_adk_bigquery_unit.py
+python test_adk_integration.py
+
+# Expected output:
+# BigQuery ADK Test Suite Runner
+# Unit Tests: PASSED (14/14 - 100.0%)
+# Integration Tests: PASSED (9/9 - 100.0%)
+# 🎉 ALL TESTS PASSED!
+```
+
+### 14. Validate Agent Workflow
+
+```bash
+# Test the complete agent workflow
+python agent.py
+
+# The agent will:
+# 1. Import CalendarManager successfully
+# 2. Use real Google Calendar if configured
+# 3. Use real Gmail for email notifications
+# 4. Process orders through BigQuery ADK
+# 5. Execute sequential workflow with all integrations
 ```
 
 ## Environment Setup
 
-Create a `.env` file in the `cookie-scheduler-agent/` directory with the following configuration:
+Create a `.env` file in the `cookie_scheduler_agent/` directory with the following configuration:
+
+> ** For Argolis Users**: Use your **secondary Gmail account email address** for `BUSINESS_EMAIL`, not your corporate Argolis email.
 
 ### Required Environment Variables
 
@@ -129,7 +216,8 @@ MODEL=gemini-2.5-flash
 USE_GMAIL_LANGCHAIN=true
 
 # Business email address for sending customer communications
-BUSINESS_EMAIL=deliveries@yourbusiness.com
+# For Argolis users: Use your secondary Gmail account, not corporate email
+BUSINESS_EMAIL=your-secondary-email@gmail.com
 
 # =============================================================================
 # CALENDAR MCP INTEGRATION
@@ -138,7 +226,8 @@ BUSINESS_EMAIL=deliveries@yourbusiness.com
 USE_CALENDAR_MCP=true
 
 # Google Calendar ID for delivery scheduling
-# Use 'primary' for the main calendar or a specific calendar ID
+# For Argolis users with secondary accounts: Use 'primary' or specific calendar ID
+# This should correspond to your secondary Gmail account's calendar
 BUSINESS_CALENDAR_ID=primary
 
 # =============================================================================
@@ -167,6 +256,8 @@ LOG_LEVEL=INFO
 
 ### Gmail LangChain Integration Setup
 
+> ** Important for Argolis Users**: Corporate Gmail access is restricted. You **must** use a free secondary Gmail account for this integration. The instructions below are designed for Google Workspace/Gmail, though you can adapt them for Outlook or other providers.
+
 The Gmail integration uses **LangChain Community Gmail toolkit** for complete Gmail API functionality. Here's what's available:
 
 #### Features:
@@ -178,9 +269,9 @@ The Gmail integration uses **LangChain Community Gmail toolkit** for complete Gm
 - Comprehensive error handling and logging
 
 #### Setup Steps:
-1. **Enable Gmail API** in Google Cloud Console
+1. **Enable Gmail API** in Google Cloud Console (using secondary account for Argolis users)
 2. **Install LangChain Community**: `pip install langchain-community`
-3. **Create OAuth2 Credentials** (Desktop Application)
+3. **Create OAuth2 Credentials** (Desktop Application) - must be associated with secondary account
 4. **Save credentials** as `gmail_langchain/gmail_credentials.json`
 5. **Test the integration**: `python gmail_langchain/test_gmail_integration.py`
 
@@ -197,6 +288,8 @@ gmail_langchain/
 
 ### Calendar MCP Server Setup
 
+> ** Important for Argolis Users**: Corporate Calendar access is restricted. You **must** use a free secondary Gmail account's calendar for this integration. These instructions are designed for Google Calendar, though you can adapt them for Outlook or other calendar providers.
+
 The Calendar MCP server provides Google Calendar integration with the following features:
 
 #### Features:
@@ -207,8 +300,8 @@ The Calendar MCP server provides Google Calendar integration with the following 
 - Comprehensive error handling and logging
 
 #### Setup Steps:
-1. **Enable Calendar API** in Google Cloud Console
-2. **Create OAuth2 Credentials** (Desktop Application)
+1. **Enable Calendar API** in Google Cloud Console (using secondary account for Argolis users)
+2. **Create OAuth2 Credentials** (Desktop Application) - must be associated with secondary account
 3. **Save credentials** as `mcp-servers/calendar/calendar_credentials.json`
 4. **Test the integration**: `python mcp-servers/calendar/test_calendar_functions.py`
 
@@ -372,7 +465,7 @@ The system includes a comprehensive test suite for the BigQuery ADK integration:
 
 ```bash
 # Unit Tests - Test application logic and SQL query generation
-cd cookie-scheduler-agent/bigquery_utils/
+cd cookie_scheduler_agent/bigquery_utils/
 python test_adk_bigquery_unit.py
 
 # Integration Tests - Test ADK toolset integration patterns
@@ -450,12 +543,12 @@ The testing strategy follows best practices for first-party ADK integration:
 - Query execution engine (BigQuery service responsibility)
 - Retry logic and backoff strategies (ADK implements this)
 
-For detailed testing documentation, see `cookie-scheduler-agent/bigquery_utils/TESTING_STRATEGY.md`.
+For detailed testing documentation, see `cookie_scheduler_agent/bigquery_utils/TESTING_STRATEGY.md`.
 
 ## File Structure
 
 ```
-cookie-scheduler-agent/
+cookie_scheduler_agent/
 ├── agent.py                    # main adk agent orchestration
 ├── dummy_data.py              # Fallback data for testing
 ├── requirements.txt           # Python dependencies
@@ -525,6 +618,7 @@ cookie-scheduler-agent/
    # 2. Create OAuth 2.0 Client ID (Desktop Application)  
    # 3. Download and save as mcp-servers/calendar/calendar_credentials.json
    # 4. Delete calendar_token.json to force re-authentication
+   # 5. For Argolis users: Ensure you're using secondary Gmail account, not corporate
    ```
 
 3. **Calendar Events Not Appearing**
@@ -539,7 +633,8 @@ cookie-scheduler-agent/
    # 1. Ensure Calendar API is enabled in Google Cloud Console
    # 2. Navigate to: "APIs & Services" → "OAuth consent screen"
    # 3. User Type: Make sure you selected "External" (not Internal)
-   # 4. Test users: Add your personal Gmail account as a test user
+   # 4. Test users: Add your secondary Gmail account as a test user
+   # 5. For Argolis users: Corporate accounts won't work - must use secondary account
    ```
 
 
