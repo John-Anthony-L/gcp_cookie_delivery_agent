@@ -33,10 +33,10 @@ print_error() {
 check_environment() {
     print_status "Checking environment configuration..."
     
-    # Try to load from cookie_scheduler_agent/.env if it exists
-    if [ -f "cookie_scheduler_agent/.env" ]; then
-        print_status "Loading environment variables from cookie_scheduler_agent/.env file..."
-        export $(cat cookie_scheduler_agent/.env | grep -v '^#' | xargs)
+    # Try to load from .env if it exists
+    if [ -f ".env" ]; then
+        print_status "Loading environment variables from .env file..."
+        export $(cat .env | grep -v '^#' | xargs)
     elif [ -f ".env" ]; then
         print_status "Loading environment variables from .env file..."
         export $(cat .env | grep -v '^#' | xargs)
@@ -44,7 +44,7 @@ check_environment() {
     
     if [ -z "$GOOGLE_CLOUD_PROJECT" ]; then
         print_error "GOOGLE_CLOUD_PROJECT environment variable is not set"
-        print_status "Please set it in cookie_scheduler_agent/.env or run:"
+        print_status "Please set it in .env or run:"
         print_status "  export GOOGLE_CLOUD_PROJECT=your-project-id"
         exit 1
     fi
@@ -200,7 +200,7 @@ main() {
     print_success "BigQuery setup completed successfully!"
     echo
     print_status "Next steps:"
-    print_status "1. Edit cookie_scheduler_agent/.env and set USE_BIGQUERY=true"
+    print_status "1. Edit .env and set USE_BIGQUERY=true"
     print_status "2. Run the agent: cd cookie_scheduler_agent && python agent.py"
     echo
     print_status "To view your data in BigQuery, visit:"

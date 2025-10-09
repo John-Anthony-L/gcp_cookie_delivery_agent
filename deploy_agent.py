@@ -1,9 +1,9 @@
 #!/usr/bin/env python3
 """
-Minimal deployment script for Cookie Delivery Agent to Vertex AI Agent Engine.
+Deployment script for Cookie Delivery Agent to Vertex AI Agent Engine.
 
 This script deploys the cookie_scheduler_agent to Google Cloud Vertex AI Agent Engine
-using the bare minimum configuration required.
+using the Vertex AI Python SDK.
 """
 
 import os
@@ -117,7 +117,7 @@ def main():
         logger.info(f"Agent Resource ID: {deployed_agent.resource_name}")
         logger.info(f"Updating Agent Resource ID in .env file")
         # Update the .env file with the new Agent Resource ID
-        set_key("cookie_scheduler_agent/.env", "AGENT_RESOURCE_ID", deployed_agent.resource_name)
+        set_key(".env", "AGENT_RESOURCE_ID", deployed_agent.resource_name)
         
         return True
         

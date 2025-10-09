@@ -180,7 +180,7 @@ adk web
 
 ## Environment Setup
 
-Create a `.env` file in the `cookie_scheduler_agent/` directory with the following configuration:
+Create a `.env` file in the main project directory with the following configuration:
 
 > ** For Argolis Users**: Use your **secondary Gmail account email address** for `BUSINESS_EMAIL`, not your corporate Argolis email.
 
@@ -530,40 +530,42 @@ For detailed testing documentation, see `cookie_scheduler_agent/bigquery_utils/T
 ## File Structure
 
 ```
-cookie_scheduler_agent/
-├── agent.py                    # main adk agent orchestration
-├── dummy_data.py              # Fallback data for testing
-├── requirements.txt           # Python dependencies
+/
 ├── .env.example              # Example environment configuration
 ├── .env                      # Your environment configuration (create this)
-│
-├── gmail_langchain/
-│   ├── gmail_manager.py             # Main LangChain Gmail manager class
-│   ├── email_utils.py               # Utility functions for agent integration
-│   ├── test_gmail_integration.py    # Test script
-│   ├── gmail_credentials.json       # Your OAuth2 credentials
-│   ├── gmail_token.json             # Auto-generated tokens
-│   └── README.md                    # Setup documentation
-│
-├── bigquery_utils/           # BigQuery ADK toolset integration
-│   ├── bigquery_tools.py     # ADK BigQuery toolset implementation
-│   ├── create_bigquery_environment.py # BigQuery setup script
-│   ├── test_adk_bigquery_unit.py      # Comprehensive unit tests
-│   ├── test_adk_integration.py        # Integration tests with ADK
-│   ├── run_all_tests.py               # Test suite runner
-│   ├── TESTING_STRATEGY.md            # Testing documentation
-│   ├── CLEANUP_SUMMARY.md             # Legacy code cleanup notes
-│   ├── BIGQUERY_SETUP.md              # ADK setup guide
-│   └── README.md                      # Directory documentation
-│
-├── mcp-servers/              # MCP Server implementations
-│   ├── calendar/             # Calendar MCP
-│   │   ├── calendar_mcp_server.py      # Complete CalendarManager class
-│   │   ├── calendar_credentials.json   # OAuth2 credentials (you create)
-│   │   ├── calendar_token.json         # Auto-generated tokens
-│   │   └── test_calendar_functions.py  # Test script for validation
-│   ├── start_calendar_mcp.py           # MCP server startup script
-│   └── setup_calendar_credentials.md   # Setup instructions
+├── requirements.txt           # Python dependencies
+├── deploy_agent.py           # Agent Engine deployment script
+└── cookie_scheduler_agent/
+    ├── agent.py                    # main adk agent orchestration
+    ├── dummy_data.py              # Fallback data for testing
+    │
+    ├── gmail_langchain/
+    │   ├── gmail_manager.py             # Main LangChain Gmail manager class
+    │   ├── email_utils.py               # Utility functions for agent integration
+    │   ├── test_gmail_integration.py    # Test script
+    │   ├── gmail_credentials.json       # Your OAuth2 credentials
+    │   ├── gmail_token.json             # Auto-generated tokens
+    │   └── README.md                    # Setup documentation
+    │
+    ├── bigquery_utils/           # BigQuery ADK toolset integration
+    │   ├── bigquery_tools.py     # ADK BigQuery toolset implementation
+    │   ├── create_bigquery_environment.py # BigQuery setup script
+    │   ├── test_adk_bigquery_unit.py      # Comprehensive unit tests
+    │   ├── test_adk_integration.py        # Integration tests with ADK
+    │   ├── run_all_tests.py               # Test suite runner
+    │   ├── TESTING_STRATEGY.md            # Testing documentation
+    │   ├── CLEANUP_SUMMARY.md             # Legacy code cleanup notes
+    │   ├── BIGQUERY_SETUP.md              # ADK setup guide
+    │   └── README.md                      # Directory documentation
+    │
+    ├── mcp-servers/              # MCP Server implementations
+    │   ├── calendar/             # Calendar MCP
+    │   │   ├── calendar_mcp_server.py      # Complete CalendarManager class
+    │   │   ├── calendar_credentials.json   # OAuth2 credentials (you create)
+    │   │   ├── calendar_token.json         # Auto-generated tokens
+    │   │   └── test_calendar_functions.py  # Test script for validation
+    │   ├── start_calendar_mcp.py           # MCP server startup script
+    │   └── setup_calendar_credentials.md   # Setup instructions
 ```
 
 ## Security Notes
