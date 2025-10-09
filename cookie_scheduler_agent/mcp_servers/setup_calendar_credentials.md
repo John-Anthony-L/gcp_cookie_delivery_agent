@@ -18,7 +18,7 @@
 
 5. Download the JSON file and save it as:
    ```
-   /Users/johnlara/Google_Projects/adk-multi-tool-use/cookie-scheduler-agent/calendar_credentials.json
+   /Users/johnlara/Google_Projects/adk-multi-tool-use/cookie_scheduler_agent/calendar_credentials.json
    ```
 
 ## 2. Required File Structure

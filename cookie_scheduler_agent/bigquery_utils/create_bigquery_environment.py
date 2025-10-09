@@ -10,8 +10,8 @@ import logging
 from datetime import datetime
 from typing import Dict, List
 
-# Add the cookie-scheduler-agent directory to Python path
-sys.path.append(os.path.join(os.path.dirname(os.path.dirname(__file__)), 'cookie-scheduler-agent'))
+# Add the cookie_scheduler_agent directory to Python path
+sys.path.append(os.path.join(os.path.dirname(os.path.dirname(__file__)), 'cookie_scheduler_agent'))
 
 try:
     from google.cloud import bigquery

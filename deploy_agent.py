@@ -2,7 +2,7 @@
 """
 Minimal deployment script for Cookie Delivery Agent to Vertex AI Agent Engine.
 
-This script deploys the cookie-scheduler-agent to Google Cloud Vertex AI Agent Engine
+This script deploys the cookie_scheduler_agent to Google Cloud Vertex AI Agent Engine
 using the bare minimum configuration required.
 """
 
@@ -26,7 +26,7 @@ def deploy_cookie_agent():
         import vertexai
         from vertexai import agent_engines
 
-        # Import the root agent from the cookie-scheduler-agent package
+        # Import the root agent from the cookie_scheduler_agent package
         from cookie_scheduler_agent.agent import root_agent
         
         logger.info("🍪 Starting deployment of Cookie Delivery Agent...")

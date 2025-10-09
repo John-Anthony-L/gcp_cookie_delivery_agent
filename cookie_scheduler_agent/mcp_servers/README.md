@@ -5,7 +5,7 @@ This directory contains Model Context Protocol (MCP) servers that provide extern
 ## 📁 Directory Structure
 
 ```
-cookie-scheduler-agent/
+cookie_scheduler_agent/
 ├── mcp-servers/
 │   └── calendar/
 │       ├── calendar_mcp_server.py          # Google Calendar MCP Server
@@ -21,7 +21,7 @@ cookie-scheduler-agent/
 
 ### Start Calendar MCP Server
 ```bash
-# From the main cookie-scheduler-agent directory
+# From the main cookie_scheduler_agent directory
 python start_calendar_mcp.py
 ```
 

@@ -40,13 +40,13 @@ MCP server code (already created)
 
 4. **Download Credentials**:
    - Click the download button next to your new credential
-   - Save the file as: `calendar_credentials.json` in the `cookie-scheduler-agent/` folder
+   - Save the file as: `calendar_credentials.json` in the `cookie_scheduler_agent/` folder
 
 ### 3. Test the MCP Server
 
 1. **Start the MCP server**:
    ```bash
-   cd /Users/johnlara/Google_Projects/adk-multi-tool-use/cookie-scheduler-agent
+   cd /Users/johnlara/Google_Projects/adk-multi-tool-use/cookie_scheduler_agent
    python calendar_mcp_server.py
    ```
 
@@ -74,7 +74,7 @@ The next step will be updating your `agent.py` to use the MCP server instead of 
 ## File Structure After Setup
 
 ```
-cookie-scheduler-agent/
+cookie_scheduler_agent/
 ├── calendar_mcp_server.py          # MCP server code
 ├── calendar_credentials.json       # OAuth credentials (keep secret!)
 ├── calendar_token.json            # Access tokens (auto-generated)

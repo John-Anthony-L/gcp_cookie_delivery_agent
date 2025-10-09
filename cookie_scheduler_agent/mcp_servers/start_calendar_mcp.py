@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 """
 Convenience script to start the Calendar MCP Server from the organized structure.
-Run this from the main cookie-scheduler-agent directory.
+Run this from the main cookie_scheduler_agent directory.
 """
 
 import os
