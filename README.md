@@ -530,10 +530,11 @@ For detailed testing documentation, see `cookie_scheduler_agent/bigquery_utils/T
 ## File Structure
 
 ```
-/
+gcp_cookie_delivery_agent/
 ├── .env.example              # Example environment configuration
 ├── .env                      # Your environment configuration (create this)
-├── requirements.txt           # Python dependencies
+├── requirements.txt          # Python dependencies
+├── setup.sh                  # enables GCP APIs and permissions to service accounts
 ├── deploy_agent.py           # Agent Engine deployment script
 └── cookie_scheduler_agent/
     ├── agent.py                    # main adk agent orchestration
