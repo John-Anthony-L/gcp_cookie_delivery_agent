@@ -127,7 +127,21 @@ USE_BIGQUERY=true
 python bigquery_utils/create_bigquery_environment.py
 ```
 
-### 10. Run Calendar MCP
+### 10. Validate BigQuery ADK
+
+```bash
+cd bigquery_utils/
+python test_adk_bigquery_unit.py
+python test_adk_integration.py
+
+# Expected output:
+# BigQuery ADK Test Suite Runner
+# Unit Tests: PASSED (14/14 - 100.0%)
+# Integration Tests: PASSED (9/9 - 100.0%)
+# 🎉 ALL TESTS PASSED!
+```
+
+### 11. Run Calendar MCP
 
 ```bash
 # Start the Calendar MCP server
@@ -136,19 +150,6 @@ python calendar_mcp_server.py
 
 # In a separate terminal, test the server
 python test_calendar_functions.py
-```
-
-### 11. Run Main Agent
-
-```bash
-# From the main directory, start the agent system
-adk web
-
-# The system will automatically:
-# - Use real Google Calendar if MCP configured
-# - Use real Gmail if LangChain configured  
-# - Use BigQuery ADK toolset for data management
-# - Fall back to dummy data for missing services
 ```
 
 ### 12. Validate Calendar MCP
@@ -163,33 +164,19 @@ python test_calendar_functions.py
 # Event creation and availability checking working
 ```
 
-### 13. Validate BigQuery ADK
+### 13. Run Main Agent
 
 ```bash
-cd bigquery_utils/
-python test_adk_bigquery_unit.py
-python test_adk_integration.py
+# From the main directory, start the agent system
+adk web
 
-# Expected output:
-# BigQuery ADK Test Suite Runner
-# Unit Tests: PASSED (14/14 - 100.0%)
-# Integration Tests: PASSED (9/9 - 100.0%)
-# 🎉 ALL TESTS PASSED!
+# The system will automatically:
+# - Use real Google Calendar if MCP configured
+# - Use real Gmail if LangChain configured  
+# - Use BigQuery ADK toolset for data management
+# - Fall back to dummy data for missing services
 ```
 
-### 14. Validate Agent Workflow
-
-```bash
-# Test the complete agent workflow
-python agent.py
-
-# The agent will:
-# 1. Import CalendarManager successfully
-# 2. Use real Google Calendar if configured
-# 3. Use real Gmail for email notifications
-# 4. Process orders through BigQuery ADK
-# 5. Execute sequential workflow with all integrations
-```
 
 ## Environment Setup
 
@@ -444,18 +431,13 @@ python gmail_langchain/test_gmail_integration.py  # Test integration
 - **Authentication Recovery**: Handles OAuth2 token refresh automatically for both Calendar and Gmail
 - **Service Availability Checks**: Smart detection of configured vs. fallback services
 
-### Next Steps
-1. **Production Hardening**: Add monitoring and alerting
-2. **Extended BigQuery Analytics**: Leverage ask_data_insights for business intelligence
-3. **Email Templates**: Enhanced HTML email templates for different order types
-
 ## Workflow Process
 
 1. **Order Detection**: Database agent fetches latest order with "order_placed" status
 2. **Schedule Analysis**: Calendar agent checks availability for requested delivery date
 3. **Appointment Creation**: Calendar agent schedules delivery appointment
 4. **Haiku Generation**: Email agent delegates to haiku writer for personalized content
-5. **Customer Notification**: Email agent sends confirmation with delivery details and haiku
+5. **Customer Notification**: Email agent sends confirmation with delivery details and haiku (drafts email but not implemented to send right now)
 6. **Status Update**: Order status updated to "scheduled" in BigQuery
 
 ## Testing & Validation
@@ -666,6 +648,14 @@ cookie_scheduler_agent/
    python test_bigquery_integration.py
    ```
 
+4. **403 Errors**
+   ```bash
+   # if working with multiple projects, you may need to ensure you are in the correct project
+   gcloud auth application-default login
+   gcloud config set project <PROJECT_ID>
+   gcloud config set billing/quota_project <PROJECT_ID>
+   ```
+
 ### Debug Mode
 
 Enable detailed logging:
@@ -702,7 +692,7 @@ This project is licensed under the Apache-2.0 license - see the LICENSE file for
 
 For issues and questions:
 1. Check the troubleshooting section above
-2. Review the detailed [INTEGRATION_GUIDE.md](INTEGRATION_GUIDE.md)
+2. Review the detailed [BQ_README.md](./cookie_scheduler_agent/bigquery_utils/README.md), [GMAIL_README.md](./cookie_scheduler_agent/gmail_langchain/README.md), [CALENDAR_README.md](./cookie_scheduler_agent/mcp_servers/README.md) for more detailed setup instructions and troubleshooting
 3. Create an issue in the repository
 
 ---
