@@ -1,8 +1,8 @@
-# 🗓️ MCP Servers - Organized Structure
+# MCP Servers - Organized Structure
 
 This directory contains Model Context Protocol (MCP) servers that provide external integrations for the cookie delivery agent.
 
-## 📁 Directory Structure
+## Directory Structure
 
 ```
 cookie_scheduler_agent/
@@ -32,26 +32,6 @@ cd mcp-servers/calendar
 python test_calendar_functions.py
 ```
 
-## What Changed by Organizing
-
-### Benefits
-1. **Clean Separation**: Each MCP server has its own directory
-2. **Secure Credentials**: Credentials are isolated per service
-3. **Scalable**: Easy to add Gmail, BigQuery, or other MCP servers
-4. **Production Ready**: Better for deployment and maintenance
-5. **Import Clarity**: Clear import paths for different services
-
-### Path Updates Made
-1. **Credentials Loading**: Updated to use relative paths within each MCP directory
-2. **Environment Variables**: .env loading adjusted for parent directory
-3. **Import Paths**: Future agent.py updates will import from `mcp-servers/calendar/`
-4. **Working Directory**: MCP server runs from its own directory
-
-### Security Updates
-1. **Updated .gitignore**: New patterns for organized credential files
-2. **Isolated Tokens**: Each service's tokens stay in their own directory
-3. **Clear Patterns**: Easy to see which credentials belong to which service
-
 ## MCP Server Status
 
 | Service | Status | Location | Functionality |
@@ -59,13 +39,6 @@ python test_calendar_functions.py
 | **Google Calendar** | Working | `mcp-servers/calendar/` | Read/Write events, check availability |
 | **Gmail** | Planned | `mcp-servers/gmail/` | Send emails, templates |
 | **BigQuery** | Could migrate | `../bigquery_tools.py` | Order data management |
-
-## Next Steps
-
-1. **Agent Integration**: Update `agent.py` to use MCP servers instead of dummy data
-2. **Gmail MCP**: Create similar structure for email functionality  
-3. **Production Deployment**: Each MCP server can run as separate service
-4. **Monitoring**: Add health checks and logging for each MCP server
 
 ## Testing
 

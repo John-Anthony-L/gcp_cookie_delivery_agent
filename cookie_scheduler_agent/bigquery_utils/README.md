@@ -119,21 +119,7 @@ Retry logic and backoff (ADK implements)
    - Success rate analysis
    - Actionable recommendations
 
-## Architecture Benefits
 
-### Before (Legacy Implementation)
-- Custom BigQuery client management
-- Manual credential handling  
-- Async/await conflicts with ADK web interface
-- Complex error management
-- Direct query execution in agent code
-
-### After (ADK Implementation)
-- Google's first-party toolset handles all BigQuery operations
-- Application Default Credentials managed automatically
-- Synchronous operation compatible with ADK web interface
-- Built-in error handling and retry logic
-- Clean separation: agents generate SQL, ADK executes it
 
 ## Key Features
 
@@ -144,15 +130,6 @@ Retry logic and backoff (ADK implements)
 - **WriteMode Configuration**: Proper data access control (BLOCKED, ALLOWED, PROTECTED)
 - **AI-Powered Insights**: Built-in data analytics via ask_data_insights tool
 - **Professional Code Quality**: No emojis, clean error handling, proper logging
-
-## Development Workflow
-
-### Adding New Features
-1. Write unit tests first (`test_adk_bigquery_unit.py`)
-2. Implement the feature in `bigquery_tools.py`  
-3. Add integration tests if needed (`test_adk_integration.py`)
-4. Run comprehensive test suite: `python run_all_tests.py`
-5. Update documentation
 
 ### Testing Best Practices
 1. **Mock ADK components**, not BigQuery services
@@ -165,21 +142,6 @@ Retry logic and backoff (ADK implements)
 
 This directory has been completely modernized for ADK integration:
 
-### Removed (Legacy Code)
-- Custom BigQuery client implementations
-- Direct query execution functions
-- Async/await patterns that conflicted with ADK
-- Legacy compatibility classes
-- Outdated dependencies (google-cloud-bigquery)
-
-### Added (Modern ADK Integration)
-- Google ADK BigQuery toolset integration
-- Comprehensive unit and integration tests
-- Professional testing documentation
-- Clean error handling without emojis
-- Application Default Credentials support
-
-For detailed migration information, see `CLEANUP_SUMMARY.md`.
 
 ## Troubleshooting
 
@@ -219,16 +181,6 @@ The ADK toolset provides:
 - **Rate Limiting**: Automatic quota and rate limit handling
 - **Retry Logic**: Intelligent retry with exponential backoff
 - **Monitoring**: Built-in metrics and logging
-
-## Contributing
-
-When contributing to this directory:
-
-1. **Follow the testing strategy** outlined in `TESTING_STRATEGY.md`
-2. **Add tests for new features** - both unit and integration tests
-3. **Update documentation** when changing interfaces
-4. **Run the full test suite** before submitting changes
-5. **Maintain professional code standards** (no emojis, clean logging)
 
 ## Support
 

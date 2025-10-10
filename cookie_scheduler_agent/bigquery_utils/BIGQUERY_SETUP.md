@@ -97,22 +97,10 @@ The BigQuery ADK toolset provides these tools:
 - **WriteMode.ALLOWED**: Full read/write access for order management (current setting)
 - **WriteMode.PROTECTED**: Temporary data access only
 
-## Migration from Legacy Implementation
-
-### Previous Issues (Resolved)
-
-The legacy implementation had async compatibility issues:
-```python
-# OLD APPROACH (deprecated)
-async def get_latest_order_from_bigquery(tool_context: ToolContext) -> dict:
-    # This caused: "asyncio.run() cannot be called from a running event loop"
-```
-
-### New ADK Approach (Current)
+### New ADK Approach 
 
 The ADK toolset approach is synchronous and compatible:
 ```python
-# NEW APPROACH (current)
 def get_bigquery_toolset() -> BigQueryToolset:
     # Synchronous initialization compatible with ADK web interface
     return bigquery_toolset

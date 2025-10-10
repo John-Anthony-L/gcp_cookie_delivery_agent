@@ -1,4 +1,4 @@
-# 🗓️ Calendar MCP Server Setup Guide
+# Calendar MCP Server Setup Guide
 
 ## Overview
 This guide will help you set up the Google Calendar MCP server to connect your cookie delivery agent with your Google Calendar.
@@ -67,7 +67,7 @@ Run the test script to see example interactions:
 python test_calendar_mcp.py
 ```
 
-### 5. 🔗 Connect to Your Agent
+### 5. Connect to Your Agent
 
 The next step will be updating your `agent.py` to use the MCP server instead of dummy data.
 
