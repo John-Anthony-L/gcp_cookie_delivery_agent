@@ -88,6 +88,44 @@ enable_apis() {
     gcloud services enable cloudfunctions.googleapis.com
     gcloud services enable cloudbuild.googleapis.com
     gcloud services enable run.googleapis.com
+    gcloud services enable aiplatform.googleapis.com            #Vertex AI API
+    gcloud services enable analyticshub.googleapis.com          #Analytics Hub API
+    gcloud services enable appoptimize.googleapis.com           #App Optimize API
+    gcloud services enable artifactregistry.googleapis.com      #Artifact Registry API
+    gcloud services enable bigquery.googleapis.com              #BigQuery API
+    gcloud services enable bigqueryconnection.googleapis.com    #BigQuery Connection API
+    gcloud services enable bigquerydatapolicy.googleapis.com    #BigQuery Data Policy API
+    gcloud services enable bigquerymigration.googleapis.com     #BigQuery Migration API
+    gcloud services enable bigqueryreservation.googleapis.com   #BigQuery Reservation API
+    gcloud services enable bigquerystorage.googleapis.com       #BigQuery Storage API
+    gcloud services enable calendar-json.googleapis.com         #Google Calendar API
+    gcloud services enable loudaicompanion.googleapis.com      #Gemini for Google Cloud API
+    gcloud services enable cloudapis.googleapis.com             #Google Cloud APIs
+    gcloud services enable cloudasset.googleapis.com            #Cloud Asset API
+    gcloud services enable cloudbuild.googleapis.com            #Cloud Build API
+    gcloud services enable cloudresourcemanager.googleapis.com  #Cloud Resource Manager API
+    gcloud services enable cloudtrace.googleapis.com            #Cloud Trace API
+    gcloud services enable compute.googleapis.com               #Compute Engine API
+    gcloud services enable containerregistry.googleapis.com     #Container Registry API
+    gcloud services enable dataform.googleapis.com              #Dataform API
+    gcloud services enable dataplex.googleapis.com              #Cloud Dataplex API
+    gcloud services enable datastore.googleapis.com             #Cloud Datastore API
+    gcloud services enable dialogflow.googleapis.com            #Dialogflow API
+    gcloud services enable discoveryengine.googleapis.com       #Discovery Engine API
+    gcloud services enable geminicloudassist.googleapis.com     #Gemini Cloud Assist API
+    gcloud services enable iam.googleapis.com                   #Identity and Access Management (IAM) API
+    gcloud services enable iamcredentials.googleapis.com        #IAM Service Account Credentials API
+    gcloud services enable logging.googleapis.com               #Cloud Logging API
+    gcloud services enable monitoring.googleapis.com            #Cloud Monitoring API
+    gcloud services enable oslogin.googleapis.com               #Cloud OS Login API
+    gcloud services enable pubsub.googleapis.com                #Cloud Pub/Sub API
+    gcloud services enable recommender.googleapis.com           #Recommender API
+    gcloud services enable servicemanagement.googleapis.com     #Service Management API
+    gcloud services enable serviceusage.googleapis.com          #Service Usage API
+    gcloud services enable sql-component.googleapis.com         #Cloud SQL
+    gcloud services enable storage-api.googleapis.com           #Google Cloud Storage JSON API
+    gcloud services enable storage-component.googleapis.com     #Cloud Storage
+    gcloud services enable storage.googleapis.com               #Cloud Storage API
 
     print_success "APIs enabled successfully"
 }
